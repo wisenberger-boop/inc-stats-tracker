@@ -39,6 +39,8 @@ class IST_Loader {
 		// Core.
 		require_once IST_PLUGIN_DIR . 'includes/class-ist-db.php';
 		require_once IST_PLUGIN_DIR . 'includes/class-ist-capabilities.php';
+		require_once IST_PLUGIN_DIR . 'includes/class-ist-fiscal-year.php';
+		require_once IST_PLUGIN_DIR . 'includes/class-ist-stats-query.php';
 
 		// Models.
 		require_once IST_PLUGIN_DIR . 'includes/models/class-ist-model-tyfcb.php';
@@ -63,11 +65,21 @@ class IST_Loader {
 			require_once IST_PLUGIN_DIR . 'admin/class-ist-admin-connects.php';
 			require_once IST_PLUGIN_DIR . 'admin/class-ist-admin-members.php';
 			require_once IST_PLUGIN_DIR . 'admin/class-ist-admin-reports.php';
+			require_once IST_PLUGIN_DIR . 'admin/class-ist-admin-settings.php';
 		}
 
 		// Frontend.
 		require_once IST_PLUGIN_DIR . 'frontend/class-ist-frontend.php';
 		require_once IST_PLUGIN_DIR . 'frontend/class-ist-forms.php';
+		require_once IST_PLUGIN_DIR . 'frontend/class-ist-profile-nav.php';
+
+		// BuddyBoss group extension — loaded on bp_include so BP_Group_Extension is defined.
+		add_action( 'bp_include', static function () {
+			require_once IST_PLUGIN_DIR . 'frontend/class-ist-group-extension.php';
+			if ( class_exists( 'BP_Group_Extension' ) ) {
+				bp_register_group_extension( 'IST_Group_Extension' );
+			}
+		} );
 	}
 
 	/**

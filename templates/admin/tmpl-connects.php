@@ -24,7 +24,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 					<th style="width:50px"><?php esc_html_e( 'ID', 'inc-stats-tracker' ); ?></th>
 					<th><?php esc_html_e( 'Member', 'inc-stats-tracker' ); ?></th>
 					<th><?php esc_html_e( 'Connected With', 'inc-stats-tracker' ); ?></th>
-					<th style="width:110px"><?php esc_html_e( 'Type', 'inc-stats-tracker' ); ?></th>
+					<th style="width:110px"><?php esc_html_e( 'Where', 'inc-stats-tracker' ); ?></th>
 					<th style="width:110px"><?php esc_html_e( 'Connect Date', 'inc-stats-tracker' ); ?></th>
 				</tr>
 			</thead>
@@ -34,7 +34,14 @@ if ( ! defined( 'ABSPATH' ) ) {
 						<td><?php echo esc_html( $row->id ); ?></td>
 						<td><?php echo esc_html( $row->member_display_name ); ?></td>
 						<td><?php echo esc_html( $row->connected_with_name ); ?></td>
-						<td><?php echo esc_html( $row->connect_type ); ?></td>
+						<td><?php
+						$where_labels = array(
+							'in-person' => __( 'In person', 'inc-stats-tracker' ),
+							'zoom'      => __( 'Zoom', 'inc-stats-tracker' ),
+							'telephone' => __( 'Telephone', 'inc-stats-tracker' ),
+						);
+						echo esc_html( $where_labels[ $row->meet_where ] ?? ( '' !== $row->meet_where ? $row->meet_where : '—' ) );
+					?></td>
 						<td><?php echo esc_html( $row->entry_date ); ?></td>
 					</tr>
 				<?php endforeach; ?>

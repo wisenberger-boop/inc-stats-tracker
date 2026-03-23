@@ -15,6 +15,11 @@
  *  connected_with_user_id Nullable. WP user ID if the other party is a group member.
  *                         Schema supports it; not surfaced in the MVP frontend form.
  *
+ *  meet_where             Where the connection took place. Canonical slugs:
+ *                         'in-person' | 'zoom' | 'telephone'. Required; '' accepted
+ *                         for historical import of any blank rows.
+ *                         Source form labels: "In person" | "Zoom" | "Telephone".
+ *
  *  entry_date             User-supplied date of the connect meeting. Used for reporting.
  *
  *  created_by_user_id     WP user who entered the record.
@@ -29,9 +34,16 @@ if ( ! defined( 'ABSPATH' ) ) {
 class IST_Service_Connects {
 
 	/**
-	 * Allowed connect type values.
+	 * Allowed meet_where values — where the connection took place.
+	 * Empty string permitted for historical import of blank rows.
+	 *
+	 * Slug        Form label     CSV value
+	 * ----------- -------------- ----------
+	 * in-person   In person      In person
+	 * zoom        Zoom           Zoom
+	 * telephone   Telephone      Telephone
 	 */
-	private const VALID_CONNECT_TYPES = array( 'one-to-one', 'group' );
+	private const VALID_MEET_WHERES = array( 'in-person', 'zoom', 'telephone' );
 
 	private IST_Model_Connect $model;
 
@@ -81,11 +93,11 @@ class IST_Service_Connects {
 		$connected_with_user_id = absint( $input['connected_with_user_id'] ?? 0 ) ?: null;
 
 		// -----------------------------------------------------------------------
-		// Connect type.
+		// Meet where — required for new records; '' accepted for historical import.
 		// -----------------------------------------------------------------------
-		$connect_type = sanitize_key( $input['connect_type'] ?? 'one-to-one' );
-		if ( ! in_array( $connect_type, self::VALID_CONNECT_TYPES, true ) ) {
-			$connect_type = 'one-to-one';
+		$meet_where = sanitize_key( $input['meet_where'] ?? '' );
+		if ( '' !== $meet_where && ! in_array( $meet_where, self::VALID_MEET_WHERES, true ) ) {
+			return new WP_Error( 'ist_invalid_meet_where', __( 'Meeting location must be In person, Zoom, or Telephone.', 'inc-stats-tracker' ) );
 		}
 
 		// -----------------------------------------------------------------------
@@ -103,7 +115,7 @@ class IST_Service_Connects {
 			'member_user_id'      => $member_user_id,
 			'member_display_name' => $member_display_name,
 			'connected_with_name' => $connected_with_name,
-			'connect_type'        => $connect_type,
+			'meet_where'          => $meet_where,
 			'note'                => $note,
 			'entry_date'          => $entry_date,
 			'created_by_user_id'  => get_current_user_id(),
@@ -127,5 +139,24 @@ class IST_Service_Connects {
 
 	public function delete( int $id ): bool {
 		return false !== $this->model->delete( $id );
+	}
+
+	/**
+	 * Normalise a raw meet_where string (CSV value or form label) to its canonical slug.
+	 *
+	 * @param string $raw  Raw value from CSV or form (e.g. "In person", "in person", "Zoom").
+	 * @return string  Canonical slug, or '' if unrecognised.
+	 */
+	public static function normalize_meet_where( string $raw ): string {
+		static $map = array(
+			'in person'  => 'in-person',
+			'in-person'  => 'in-person',
+			'inperson'   => 'in-person',
+			'zoom'       => 'zoom',
+			'telephone'  => 'telephone',
+			'phone'      => 'telephone',
+		);
+		$key = strtolower( trim( $raw ) );
+		return $map[ $key ] ?? '';
 	}
 }

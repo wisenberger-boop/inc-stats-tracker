@@ -25,6 +25,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 					<th><?php esc_html_e( 'Reporting Member', 'inc-stats-tracker' ); ?></th>
 					<th><?php esc_html_e( 'Business Source', 'inc-stats-tracker' ); ?></th>
 					<th style="width:120px"><?php esc_html_e( 'Amount', 'inc-stats-tracker' ); ?></th>
+					<th style="width:90px"><?php esc_html_e( 'Biz Type', 'inc-stats-tracker' ); ?></th>
+					<th style="width:90px"><?php esc_html_e( 'Ref Type', 'inc-stats-tracker' ); ?></th>
 					<th style="width:110px"><?php esc_html_e( 'Business Date', 'inc-stats-tracker' ); ?></th>
 				</tr>
 			</thead>
@@ -40,6 +42,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 							<?php endif; ?>
 						</td>
 						<td><?php echo esc_html( ist_format_currency( (float) $row->amount ) ); ?></td>
+						<td><?php echo esc_html( ucfirst( $row->business_type ) ); ?></td>
+						<td><?php echo esc_html( '' !== $row->referral_type ? ucwords( str_replace( '-', ' ', $row->referral_type ) ) : '—' ); ?></td>
 						<td><?php echo esc_html( $row->entry_date ); ?></td>
 					</tr>
 				<?php endforeach; ?>

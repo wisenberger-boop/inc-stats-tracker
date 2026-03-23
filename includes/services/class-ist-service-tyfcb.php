@@ -28,6 +28,18 @@
  *                        the free-text source name entered by the submitter.
  *                        Write-once; never updated.
  *
+ *  business_type         Whether the closed business is new or repeat. Canonical
+ *                        slugs: 'new' | 'repeat'. Required on new records; empty
+ *                        string is accepted only for historical import.
+ *
+ *  referral_type         How the business originated relative to the group. Canonical
+ *                        slugs: 'inside' | 'outside' | 'tier-3'. Required on new
+ *                        records; empty string accepted for historical import.
+ *
+ *  amount                Dollar value of the closed business. Raw input may include
+ *                        currency formatting ($1,234.00); normalise_amount() strips
+ *                        these before casting to float.
+ *
  *  entry_date            User-supplied date of the closed business / reporting event.
  *                        Used for all date-range filters and reporting. Required.
  *
@@ -44,10 +56,14 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 class IST_Service_TYFCB {
 
-	/**
-	 * Allowed values for thank_you_to_type.
-	 */
+	/** Allowed values for thank_you_to_type. */
 	private const VALID_SOURCE_TYPES = array( 'member', 'other' );
+
+	/** Allowed values for business_type. Empty string permitted for historical import. */
+	private const VALID_BUSINESS_TYPES = array( 'new', 'repeat' );
+
+	/** Allowed values for referral_type. Empty string permitted for historical import. */
+	private const VALID_REFERRAL_TYPES = array( 'inside', 'outside', 'tier-3' );
 
 	private IST_Model_TYFCB $model;
 
@@ -125,11 +141,27 @@ class IST_Service_TYFCB {
 		}
 
 		// -----------------------------------------------------------------------
-		// Amount.
+		// Amount — strip currency formatting before casting.
 		// -----------------------------------------------------------------------
-		$amount = (float) ( $input['amount'] ?? 0 );
+		$amount = self::normalize_amount( $input['amount'] ?? '0' );
 		if ( $amount <= 0 ) {
 			return new WP_Error( 'ist_invalid_amount', __( 'Closed business amount must be greater than zero.', 'inc-stats-tracker' ) );
+		}
+
+		// -----------------------------------------------------------------------
+		// Business type — required for new records; '' accepted for historical import.
+		// -----------------------------------------------------------------------
+		$business_type = sanitize_key( $input['business_type'] ?? '' );
+		if ( '' !== $business_type && ! in_array( $business_type, self::VALID_BUSINESS_TYPES, true ) ) {
+			return new WP_Error( 'ist_invalid_business_type', __( 'Business type must be New or Repeat.', 'inc-stats-tracker' ) );
+		}
+
+		// -----------------------------------------------------------------------
+		// Referral type — required for new records; '' accepted for historical import.
+		// -----------------------------------------------------------------------
+		$referral_type = sanitize_key( $input['referral_type'] ?? '' );
+		if ( '' !== $referral_type && ! in_array( $referral_type, self::VALID_REFERRAL_TYPES, true ) ) {
+			return new WP_Error( 'ist_invalid_referral_type', __( 'Referral type must be Inside, Outside, or Tier 3.', 'inc-stats-tracker' ) );
 		}
 
 		// -----------------------------------------------------------------------
@@ -156,6 +188,8 @@ class IST_Service_TYFCB {
 			'thank_you_to_type'    => $thank_you_to_type,
 			'thank_you_to_name'    => $thank_you_to_name,
 			'amount'               => $amount,
+			'business_type'        => $business_type,
+			'referral_type'        => $referral_type,
 			'note'                 => $note,
 			'entry_date'           => $entry_date,
 			'created_by_user_id'   => get_current_user_id(),
@@ -180,5 +214,19 @@ class IST_Service_TYFCB {
 
 	public function delete( int $id ): bool {
 		return false !== $this->model->delete( $id );
+	}
+
+	/**
+	 * Strip currency formatting from a raw amount string and return a float.
+	 *
+	 * Handles CSV-style values like "$4,824" or "$1,234.56".
+	 * Strips everything except digits and the decimal point before casting.
+	 *
+	 * @param string|float|int $raw
+	 * @return float
+	 */
+	public static function normalize_amount( $raw ): float {
+		// Remove $, commas, spaces, and any other non-numeric chars except '.'.
+		return (float) preg_replace( '/[^0-9.]/', '', (string) $raw );
 	}
 }

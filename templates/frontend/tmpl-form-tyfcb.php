@@ -85,6 +85,41 @@ $today = wp_date( 'Y-m-d' );
 		<input type="number" id="ist-tyfcb-amount" name="amount" step="0.01" min="0.01" required>
 	</p>
 
+	<?php /* Business Type — is this new or repeat business? */ ?>
+	<fieldset class="ist-fieldset">
+		<legend><?php esc_html_e( 'Business Type', 'inc-stats-tracker' ); ?> <span aria-hidden="true">*</span></legend>
+		<div class="ist-radio-group">
+			<label class="ist-radio-label">
+				<input type="radio" name="business_type" value="new" required>
+				<?php esc_html_e( 'New', 'inc-stats-tracker' ); ?>
+			</label>
+			<label class="ist-radio-label">
+				<input type="radio" name="business_type" value="repeat">
+				<?php esc_html_e( 'Repeat', 'inc-stats-tracker' ); ?>
+			</label>
+		</div>
+	</fieldset>
+
+	<?php /* Referral Type — how did this business originate relative to the group? */ ?>
+	<fieldset class="ist-fieldset">
+		<legend><?php esc_html_e( 'Referral Type', 'inc-stats-tracker' ); ?> <span aria-hidden="true">*</span></legend>
+		<div class="ist-radio-group">
+			<label class="ist-radio-label">
+				<input type="radio" name="referral_type" value="inside" required>
+				<?php esc_html_e( 'Inside', 'inc-stats-tracker' ); ?>
+			</label>
+			<label class="ist-radio-label">
+				<input type="radio" name="referral_type" value="outside">
+				<?php esc_html_e( 'Outside', 'inc-stats-tracker' ); ?>
+			</label>
+			<label class="ist-radio-label">
+				<input type="radio" name="referral_type" value="tier-3">
+				<?php esc_html_e( 'Tier 3', 'inc-stats-tracker' ); ?>
+			</label>
+		</div>
+		<p class="ist-field-hint"><?php esc_html_e( 'Inside = our group · Outside = outside our group · Tier 3 = a referral of a referral', 'inc-stats-tracker' ); ?></p>
+	</fieldset>
+
 	<p>
 		<label for="ist-tyfcb-date"><?php esc_html_e( 'Business Date', 'inc-stats-tracker' ); ?></label>
 		<input type="date" id="ist-tyfcb-date" name="entry_date"

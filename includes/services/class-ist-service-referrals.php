@@ -16,6 +16,17 @@
  *  referred_to_user_id  Nullable. WP user ID if the recipient happens to be a group
  *                       member. Schema supports it; not surfaced in the MVP frontend form.
  *
+ *  referral_type        How the referral relates to the group. Canonical slugs:
+ *                       'inside' | 'outside' | 'tier-3'. Required; '' accepted for
+ *                       historical import.
+ *
+ *  status               Handoff method — how the referral was passed. NOT a lifecycle
+ *                       status. Canonical slugs: 'emailed' | 'gave-phone' | 'will-initiate'.
+ *                       '' accepted for historical import (source CSV has blank rows).
+ *
+ *  note                 Referral details. Required on new records (form enforces this);
+ *                       '' accepted for historical import.
+ *
  *  entry_date           User-supplied date of the referral event. Used for reporting.
  *
  *  created_by_user_id   WP user who entered the record.
@@ -30,9 +41,23 @@ if ( ! defined( 'ABSPATH' ) ) {
 class IST_Service_Referrals {
 
 	/**
-	 * Allowed status values.
+	 * Allowed referral_type values. Shared vocabulary with TYFCB.
+	 * Empty string permitted for historical import of blank CSV rows.
 	 */
-	private const VALID_STATUSES = array( 'open', 'closed', 'converted' );
+	private const VALID_REFERRAL_TYPES = array( 'inside', 'outside', 'tier-3' );
+
+	/**
+	 * Allowed status (handoff method) values.
+	 * These describe HOW the referral was passed, not a lifecycle state.
+	 * Empty string permitted for historical import of blank CSV rows.
+	 *
+	 * Slug          Form label                      CSV label
+	 * ------------- ------------------------------- -----------------------------------
+	 * emailed        Emailed                         "Given your card, or emailed"
+	 * gave-phone     Gave Phone Number               (implied)
+	 * will-initiate  Said you would initiate contact "Told them you would call"
+	 */
+	private const VALID_STATUSES = array( 'emailed', 'gave-phone', 'will-initiate' );
 
 	private IST_Model_Referral $model;
 
@@ -82,11 +107,19 @@ class IST_Service_Referrals {
 		$referred_to_user_id = absint( $input['referred_to_user_id'] ?? 0 ) ?: null;
 
 		// -----------------------------------------------------------------------
-		// Status.
+		// Referral type — required for new records; '' accepted for historical import.
 		// -----------------------------------------------------------------------
-		$status = sanitize_key( $input['status'] ?? 'open' );
-		if ( ! in_array( $status, self::VALID_STATUSES, true ) ) {
-			$status = 'open';
+		$referral_type = sanitize_key( $input['referral_type'] ?? '' );
+		if ( '' !== $referral_type && ! in_array( $referral_type, self::VALID_REFERRAL_TYPES, true ) ) {
+			return new WP_Error( 'ist_invalid_referral_type', __( 'Referral type must be Inside, Outside, or Tier 3.', 'inc-stats-tracker' ) );
+		}
+
+		// -----------------------------------------------------------------------
+		// Status (handoff method) — '' accepted for historical import of blank rows.
+		// -----------------------------------------------------------------------
+		$status = sanitize_key( $input['status'] ?? '' );
+		if ( '' !== $status && ! in_array( $status, self::VALID_STATUSES, true ) ) {
+			return new WP_Error( 'ist_invalid_status', __( 'Referral status must be Emailed, Gave Phone Number, or Said you would initiate contact.', 'inc-stats-tracker' ) );
 		}
 
 		// -----------------------------------------------------------------------
@@ -97,6 +130,7 @@ class IST_Service_Referrals {
 			return new WP_Error( 'ist_missing_date', __( 'A referral date is required.', 'inc-stats-tracker' ) );
 		}
 
+		// Note (referral details) — required for new records.
 		$note = sanitize_textarea_field( $input['note'] ?? '' );
 
 		// referred_to_user_id omitted from data when null so MySQL stores NULL.
@@ -104,6 +138,7 @@ class IST_Service_Referrals {
 			'referred_by_user_id' => $referred_by_user_id,
 			'referred_by_name'    => $referred_by_name,
 			'referred_to_name'    => $referred_to_name,
+			'referral_type'       => $referral_type,
 			'status'              => $status,
 			'note'                => $note,
 			'entry_date'          => $entry_date,
@@ -127,14 +162,14 @@ class IST_Service_Referrals {
 	}
 
 	/**
-	 * Update the status of a referral record.
+	 * Update the status (handoff method) of a referral record.
 	 *
 	 * @param int    $id
-	 * @param string $status  Must be one of VALID_STATUSES.
+	 * @param string $status  Must be one of VALID_STATUSES or ''.
 	 * @return bool
 	 */
 	public function update_status( int $id, string $status ): bool {
-		if ( ! in_array( $status, self::VALID_STATUSES, true ) ) {
+		if ( '' !== $status && ! in_array( $status, self::VALID_STATUSES, true ) ) {
 			return false;
 		}
 		return false !== $this->model->update( $id, array( 'status' => $status ) );
@@ -142,5 +177,47 @@ class IST_Service_Referrals {
 
 	public function delete( int $id ): bool {
 		return false !== $this->model->delete( $id );
+	}
+
+	/**
+	 * Normalise a raw referral status string (CSV label or form label) to its canonical slug.
+	 *
+	 * CSV labels differ from form labels; both map to the same canonical slug.
+	 *
+	 * @param string $raw  Raw value from CSV or form.
+	 * @return string  Canonical slug, or '' if unrecognised.
+	 */
+	public static function normalize_referral_status( string $raw ): string {
+		static $map = array(
+			'given your card, or emailed'    => 'emailed',
+			'emailed'                        => 'emailed',
+			'gave phone number'              => 'gave-phone',
+			'gave your phone number'         => 'gave-phone',
+			'gave-phone'                     => 'gave-phone',
+			'told them you would call'       => 'will-initiate',
+			'said you would initiate contact' => 'will-initiate',
+			'will-initiate'                  => 'will-initiate',
+			'will initiate'                  => 'will-initiate',
+		);
+		$key = strtolower( trim( $raw ) );
+		return $map[ $key ] ?? '';
+	}
+
+	/**
+	 * Normalise a raw referral type string to its canonical slug.
+	 *
+	 * @param string $raw  Raw value from CSV or form (e.g. "Tier 3", "tier-3", "Inside").
+	 * @return string  Canonical slug, or '' if unrecognised.
+	 */
+	public static function normalize_referral_type( string $raw ): string {
+		static $map = array(
+			'inside'  => 'inside',
+			'outside' => 'outside',
+			'tier 3'  => 'tier-3',
+			'tier-3'  => 'tier-3',
+			'tier3'   => 'tier-3',
+		);
+		$key = strtolower( trim( $raw ) );
+		return $map[ $key ] ?? '';
 	}
 }

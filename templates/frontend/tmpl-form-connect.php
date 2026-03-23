@@ -33,27 +33,40 @@ $today = wp_date( 'Y-m-d' );
 	</p>
 
 	<p>
-		<label for="ist-con-with"><?php esc_html_e( 'Connected With', 'inc-stats-tracker' ); ?></label>
-		<input type="text" id="ist-con-with" name="connected_with_name" required>
+		<label for="ist-con-with"><?php esc_html_e( 'Met With', 'inc-stats-tracker' ); ?></label>
+		<input type="text" id="ist-con-with" name="connected_with_name" required
+			placeholder="<?php esc_attr_e( 'Name of person you connected with', 'inc-stats-tracker' ); ?>">
 	</p>
 
 	<p>
-		<label for="ist-con-type"><?php esc_html_e( 'Connect Type', 'inc-stats-tracker' ); ?></label>
-		<select id="ist-con-type" name="connect_type">
-			<option value="one-to-one"><?php esc_html_e( 'One-to-One', 'inc-stats-tracker' ); ?></option>
-			<option value="group"><?php esc_html_e( 'Group', 'inc-stats-tracker' ); ?></option>
-		</select>
-	</p>
-
-	<p>
-		<label for="ist-con-date"><?php esc_html_e( 'Connect Date', 'inc-stats-tracker' ); ?></label>
+		<label for="ist-con-date"><?php esc_html_e( 'Date of Connection', 'inc-stats-tracker' ); ?></label>
 		<input type="date" id="ist-con-date" name="entry_date"
 			value="<?php echo esc_attr( $today ); ?>" required>
 	</p>
 
+	<?php /* Meet where — the medium of the connection */ ?>
+	<fieldset class="ist-fieldset">
+		<legend><?php esc_html_e( 'Where did you meet?', 'inc-stats-tracker' ); ?> <span aria-hidden="true">*</span></legend>
+		<div class="ist-radio-group">
+			<label class="ist-radio-label">
+				<input type="radio" name="meet_where" value="in-person" required>
+				<?php esc_html_e( 'In person', 'inc-stats-tracker' ); ?>
+			</label>
+			<label class="ist-radio-label">
+				<input type="radio" name="meet_where" value="zoom">
+				<?php esc_html_e( 'Zoom', 'inc-stats-tracker' ); ?>
+			</label>
+			<label class="ist-radio-label">
+				<input type="radio" name="meet_where" value="telephone">
+				<?php esc_html_e( 'Telephone', 'inc-stats-tracker' ); ?>
+			</label>
+		</div>
+	</fieldset>
+
 	<p>
-		<label for="ist-con-note"><?php esc_html_e( 'Note', 'inc-stats-tracker' ); ?></label>
-		<textarea id="ist-con-note" name="note" rows="3"></textarea>
+		<label for="ist-con-note"><?php esc_html_e( 'Topic of Conversation', 'inc-stats-tracker' ); ?></label>
+		<textarea id="ist-con-note" name="note" rows="3"
+			placeholder="<?php esc_attr_e( 'A general idea of what you discussed', 'inc-stats-tracker' ); ?>"></textarea>
 	</p>
 
 	<button type="submit" class="ist-btn"><?php esc_html_e( 'Submit Connect', 'inc-stats-tracker' ); ?></button>

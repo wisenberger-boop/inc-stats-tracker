@@ -30,3 +30,12 @@ $ist_forms = new IST_Forms();
 add_action( 'admin_post_ist_submit_tyfcb',    array( $ist_forms, 'handle_tyfcb' ) );
 add_action( 'admin_post_ist_submit_referral', array( $ist_forms, 'handle_referral' ) );
 add_action( 'admin_post_ist_submit_connect',  array( $ist_forms, 'handle_connect' ) );
+
+// BuddyBoss / BuddyPress profile nav — "My Stats" tab.
+add_action( 'bp_setup_nav', array( 'IST_Profile_Nav', 'register' ), 10 );
+
+// Settings save hook (admin only — logged-in WP admins).
+if ( is_admin() ) {
+	$ist_settings_handler = new IST_Admin_Settings();
+	add_action( 'admin_post_ist_save_settings', array( $ist_settings_handler, 'handle_save_settings' ) );
+}

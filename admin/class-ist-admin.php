@@ -26,11 +26,12 @@ class IST_Admin {
 		);
 
 		$subpages = array(
-			array( 'ist-tyfcb',     __( 'TYFCB', 'inc-stats-tracker' ),       'ist_manage_tyfcb',     'IST_Admin_TYFCB',     'page_tyfcb' ),
+			array( 'ist-tyfcb',     __( 'TYFCB', 'inc-stats-tracker' ),        'ist_manage_tyfcb',     'IST_Admin_TYFCB',     'page_tyfcb' ),
 			array( 'ist-referrals', __( 'Referrals', 'inc-stats-tracker' ),    'ist_manage_referrals', 'IST_Admin_Referrals', 'page_referrals' ),
 			array( 'ist-connects',  __( 'Connects', 'inc-stats-tracker' ),     'ist_manage_connects',  'IST_Admin_Connects',  'page_connects' ),
-			array( 'ist-members',   __( 'Group Roster', 'inc-stats-tracker' ),  'ist_view_dashboard',   'IST_Admin_Members',   'page_members' ),
+			array( 'ist-members',   __( 'Group Roster', 'inc-stats-tracker' ), 'ist_view_dashboard',   'IST_Admin_Members',   'page_members' ),
 			array( 'ist-reports',   __( 'Reports', 'inc-stats-tracker' ),      'ist_view_reports',     'IST_Admin_Reports',   'page_reports' ),
+			array( 'ist-settings',  __( 'Settings', 'inc-stats-tracker' ),     'manage_options',       'IST_Admin_Settings',  'page_settings' ),
 		);
 
 		foreach ( $subpages as $sub ) {

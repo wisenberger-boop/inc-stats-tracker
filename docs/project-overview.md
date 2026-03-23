@@ -32,7 +32,9 @@ All BuddyBoss API calls are isolated to `IST_Service_Members`.
 | Models | `includes/models/` | Raw CRUD per table |
 | Member service | `includes/services/class-ist-service-members.php` | BuddyBoss group member list; transient cache; all BB API calls isolated here |
 | Stat services | `includes/services/` | Validation, snapshot capture, group membership guard |
+| Fiscal year | `includes/class-ist-fiscal-year.php` | All fiscal-year date calculations; group-aware; no FY math outside this class |
 | Admin screens | `admin/` | Menu pages, asset enqueuing |
+| Settings screen | `admin/class-ist-admin-settings.php` | BB group ID, fiscal year start month, records per page |
 | Frontend | `frontend/` | Shortcodes, form handling |
 | Templates | `templates/admin/` `templates/frontend/` | Display only, no logic |
 | Import/Export | `includes/import-export/` | CSV read/write |
@@ -44,6 +46,15 @@ on activation. Other roles can be granted caps via the Roles editor or programma
 Key caps: `ist_submit_records` (group members submitting their own stats),
 `ist_view_dashboard`, `ist_manage_tyfcb/referrals/connects`, `ist_view_reports`,
 `ist_import_records`, `ist_export_records`.
+
+## Settings Storage
+
+| Option | Contents |
+|---|---|
+| `ist_settings` | Plugin-wide: `bb_group_id`, `date_format`, `records_per_page` |
+| `ist_group_config` | Per-group array keyed by BuddyBoss group ID. Each entry holds group-specific reporting config. Currently: `fiscal_year_start_month` (int 1–12). Designed to expand — add future per-group settings here without touching `ist_settings`. |
+
+`IST_Fiscal_Year::get_start_month()` reads from `ist_group_config` and falls back to `7` (July) when no entry exists for the active group.
 
 ## Database Tables
 See `docs/database-schema.md` for full schema.

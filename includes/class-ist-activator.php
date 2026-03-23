@@ -31,6 +31,16 @@ class IST_Activator {
 	 *  - entry_date  : user-supplied date of the business/reporting event. Used for reporting.
 	 *  - created_at  : auto-set MySQL insert timestamp. Audit/sort use only.
 	 *  - created_by_user_id : WP user who physically entered the record.
+	 *
+	 * Controlled vocabularies (enforced by services, not DB constraints):
+	 *  - business_type  : 'new' | 'repeat'
+	 *  - referral_type  : 'inside' | 'outside' | 'tier-3'
+	 *  - status (referrals, handoff method) : 'emailed' | 'gave-phone' | 'will-initiate'
+	 *  - meet_where     : 'in-person' | 'zoom' | 'telephone'
+	 *
+	 * Migration note: dbDelta adds new columns to existing tables but does NOT drop or
+	 * rename columns. If upgrading from a prior install that has connect_type, that column
+	 * will remain inert until a future ALTER TABLE migration removes it.
 	 */
 	private static function create_tables(): void {
 		global $wpdb;
@@ -48,6 +58,8 @@ class IST_Activator {
 		// thank_you_to_user_id : WP user ID of the thanked source. NULL when type = 'other'.
 		// thank_you_to_name    : Always populated. Snapshot when type = 'member';
 		//                        free-text source name when type = 'other'.
+		// business_type        : 'new' | 'repeat'. Empty string permitted for historical import.
+		// referral_type        : 'inside' | 'outside' | 'tier-3'. Empty string for historical import.
 		// -----------------------------------------------------------------------
 		$sql[] = "CREATE TABLE {$wpdb->prefix}ist_tyfcb (
 			id                   BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
@@ -57,6 +69,8 @@ class IST_Activator {
 			thank_you_to_user_id BIGINT(20) UNSIGNED DEFAULT NULL,
 			thank_you_to_name    VARCHAR(255) NOT NULL DEFAULT '',
 			amount               DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+			business_type        VARCHAR(20) NOT NULL DEFAULT '',
+			referral_type        VARCHAR(20) NOT NULL DEFAULT '',
 			note                 TEXT,
 			entry_date           DATE NOT NULL,
 			created_at           DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -75,6 +89,9 @@ class IST_Activator {
 		// referred_to_name    : Always populated. Name of the person or business
 		//                       receiving the referral.
 		// referred_to_user_id : Nullable. WP user ID if the recipient is a group member.
+		// referral_type       : 'inside' | 'outside' | 'tier-3'.
+		// status              : Handoff method — 'emailed' | 'gave-phone' | 'will-initiate'.
+		//                       NOT a lifecycle status. Empty string permitted for historical import.
 		// -----------------------------------------------------------------------
 		$sql[] = "CREATE TABLE {$wpdb->prefix}ist_referrals (
 			id                  BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
@@ -82,7 +99,8 @@ class IST_Activator {
 			referred_by_name    VARCHAR(255) NOT NULL DEFAULT '',
 			referred_to_name    VARCHAR(255) NOT NULL DEFAULT '',
 			referred_to_user_id BIGINT(20) UNSIGNED DEFAULT NULL,
-			status              VARCHAR(50) NOT NULL DEFAULT 'open',
+			referral_type       VARCHAR(20) NOT NULL DEFAULT '',
+			status              VARCHAR(50) NOT NULL DEFAULT '',
 			note                TEXT,
 			entry_date          DATE NOT NULL,
 			created_at          DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -99,6 +117,7 @@ class IST_Activator {
 		// member_display_name    : Snapshot of that member's display name at insert time.
 		// connected_with_name    : Always populated. Name of the other party.
 		// connected_with_user_id : Nullable. WP user ID if the other party is a group member.
+		// meet_where             : Meeting medium — 'in-person' | 'zoom' | 'telephone'.
 		// -----------------------------------------------------------------------
 		$sql[] = "CREATE TABLE {$wpdb->prefix}ist_connects (
 			id                     BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
@@ -106,7 +125,7 @@ class IST_Activator {
 			member_display_name    VARCHAR(255) NOT NULL DEFAULT '',
 			connected_with_name    VARCHAR(255) NOT NULL DEFAULT '',
 			connected_with_user_id BIGINT(20) UNSIGNED DEFAULT NULL,
-			connect_type           VARCHAR(50) NOT NULL DEFAULT 'one-to-one',
+			meet_where             VARCHAR(50) NOT NULL DEFAULT '',
 			note                   TEXT,
 			entry_date             DATE NOT NULL,
 			created_at             DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -125,6 +144,9 @@ class IST_Activator {
 
 	/**
 	 * Set default plugin options.
+	 *
+	 * add_option() is a no-op when the option already exists, so these calls
+	 * are safe to run on re-activation without overwriting saved settings.
 	 */
 	private static function set_defaults(): void {
 		add_option( 'ist_settings', array(
@@ -132,5 +154,10 @@ class IST_Activator {
 			'records_per_page' => 25,
 			'bb_group_id'      => 0,
 		) );
+
+		// Per-group configuration. Keyed by BuddyBoss group ID.
+		// Starts empty; the Settings screen writes the first entry when a group is configured.
+		// IST_Fiscal_Year::get_start_month() falls back to July (7) when no entry exists.
+		add_option( 'ist_group_config', array() );
 	}
 }

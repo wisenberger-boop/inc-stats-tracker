@@ -99,3 +99,121 @@
 	background: #f0f0f1;
 	color: #50575e;
 }
+
+/* -------------------------------------------------------------------------
+   My Stats / Group Stats Reports — shared layout
+   ------------------------------------------------------------------------- */
+
+.ist-my-stats,
+.ist-group-stats-reports {
+	padding: 16px 0;
+}
+
+.ist-my-stats h2,
+.ist-group-stats-reports h2 {
+	margin-top: 0;
+	margin-bottom: 20px;
+}
+
+/* KPI table */
+.ist-kpi-section {
+	margin-bottom: 28px;
+}
+
+.ist-kpi-table {
+	width: 100%;
+	border-collapse: collapse;
+}
+
+.ist-kpi-table th,
+.ist-kpi-table td {
+	padding: 8px 12px;
+	text-align: left;
+	border-bottom: 1px solid #eee;
+}
+
+.ist-kpi-table thead th {
+	font-weight: 700;
+	background: #f9f9f9;
+}
+
+.ist-kpi-label {
+	font-weight: 600;
+}
+
+/* Submit action buttons */
+.ist-submit-actions {
+	display: flex;
+	gap: 10px;
+	flex-wrap: wrap;
+	margin-bottom: 28px;
+}
+
+.ist-submit-btn {
+	display: inline-block;
+	background: #0073aa;
+	color: #fff;
+	border-radius: 3px;
+	padding: 8px 16px;
+	font-size: 14px;
+	text-decoration: none;
+	line-height: 1.4;
+}
+
+.ist-submit-btn:hover {
+	background: #005d8c;
+	color: #fff;
+}
+
+/* Shared table base */
+.ist-table {
+	width: 100%;
+	border-collapse: collapse;
+	font-size: 14px;
+	margin-bottom: 8px;
+}
+
+.ist-table th,
+.ist-table td {
+	padding: 7px 10px;
+	text-align: left;
+	border-bottom: 1px solid #eee;
+}
+
+.ist-table thead th {
+	font-weight: 700;
+	background: #f9f9f9;
+}
+
+.ist-empty {
+	color: #888;
+	font-style: italic;
+	margin: 4px 0 20px;
+}
+
+/* Recent records section headings */
+.ist-recent-records h3 {
+	margin-top: 24px;
+	margin-bottom: 8px;
+	font-size: 15px;
+}
+
+/* Leaderboard */
+.ist-leaderboard h3 {
+	margin-top: 28px;
+	margin-bottom: 4px;
+	font-size: 15px;
+}
+
+.ist-leaderboard-note {
+	font-size: 12px;
+	color: #666;
+	margin: 0 0 8px;
+}
+
+.ist-leaderboard-table .ist-rank {
+	width: 36px;
+	text-align: center;
+	font-weight: 700;
+	color: #888;
+}
