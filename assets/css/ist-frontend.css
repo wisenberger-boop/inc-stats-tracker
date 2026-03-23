@@ -1,0 +1,101 @@
+/* INC Stats Tracker — Frontend styles */
+
+.ist-form {
+	max-width: 520px;
+}
+
+.ist-form p {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+	margin-bottom: 16px;
+}
+
+.ist-form label {
+	font-weight: 600;
+	font-size: 14px;
+}
+
+.ist-form input,
+.ist-form select,
+.ist-form textarea {
+	border: 1px solid #ccc;
+	border-radius: 3px;
+	padding: 6px 10px;
+	font-size: 14px;
+	width: 100%;
+	box-sizing: border-box;
+}
+
+.ist-btn {
+	background: #0073aa;
+	color: #fff;
+	border: none;
+	border-radius: 3px;
+	padding: 8px 18px;
+	font-size: 14px;
+	cursor: pointer;
+}
+
+.ist-btn:hover {
+	background: #005d8c;
+}
+
+/* -------------------------------------------------------------------------
+   TYFCB source-type toggle panels
+   ------------------------------------------------------------------------- */
+
+.ist-fieldset {
+	border: 1px solid #ccc;
+	border-radius: 3px;
+	padding: 12px 16px;
+	margin-bottom: 16px;
+}
+
+.ist-fieldset legend {
+	font-weight: 600;
+	font-size: 14px;
+	padding: 0 4px;
+}
+
+.ist-radio-group {
+	display: flex;
+	gap: 20px;
+	margin-bottom: 12px;
+}
+
+.ist-radio-label {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	font-size: 14px;
+	cursor: pointer;
+}
+
+/* Source panels are hidden by default; JS adds .ist-visible to the active one. */
+.ist-source-panel {
+	display: none;
+}
+
+.ist-source-panel.ist-visible {
+	display: block;
+}
+
+/* -------------------------------------------------------------------------
+   Admin list view: type tag
+   ------------------------------------------------------------------------- */
+
+.ist-tag {
+	display: inline-block;
+	font-size: 11px;
+	font-weight: 600;
+	padding: 1px 6px;
+	border-radius: 3px;
+	vertical-align: middle;
+	margin-left: 4px;
+}
+
+.ist-tag--other {
+	background: #f0f0f1;
+	color: #50575e;
+}

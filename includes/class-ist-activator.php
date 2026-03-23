@@ -1,0 +1,136 @@
+<?php
+/**
+ * Handles plugin activation.
+ *
+ * Creates database tables and sets default options.
+ *
+ * @package INC_Stats_Tracker
+ */
+
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
+class IST_Activator {
+
+	/**
+	 * Run on plugin activation.
+	 */
+	public static function activate(): void {
+		self::create_tables();
+		self::set_defaults();
+		flush_rewrite_rules();
+	}
+
+	/**
+	 * Create custom DB tables via dbDelta.
+	 *
+	 * Column naming conventions:
+	 *  - *_user_id columns reference wp_users.ID directly (no plugin member table).
+	 *  - *_name columns store a display-name snapshot written at insert time.
+	 *  - entry_date  : user-supplied date of the business/reporting event. Used for reporting.
+	 *  - created_at  : auto-set MySQL insert timestamp. Audit/sort use only.
+	 *  - created_by_user_id : WP user who physically entered the record.
+	 */
+	private static function create_tables(): void {
+		global $wpdb;
+		require_once ABSPATH . 'wp-admin/includes/upgrade.php';
+
+		$charset = $wpdb->get_charset_collate();
+
+		// -----------------------------------------------------------------------
+		// TYFCB (Thank You for Closed Business) records.
+		//
+		// submitted_by_user_id : WP user ID of the member reporting the closed business.
+		// submitted_by_name    : Snapshot of that member's display name at insert time.
+		// thank_you_to_type    : 'member' when the source is a resolvable WP user;
+		//                        'other' when the source cannot be tied to a WP user ID.
+		// thank_you_to_user_id : WP user ID of the thanked source. NULL when type = 'other'.
+		// thank_you_to_name    : Always populated. Snapshot when type = 'member';
+		//                        free-text source name when type = 'other'.
+		// -----------------------------------------------------------------------
+		$sql[] = "CREATE TABLE {$wpdb->prefix}ist_tyfcb (
+			id                   BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
+			submitted_by_user_id BIGINT(20) UNSIGNED NOT NULL,
+			submitted_by_name    VARCHAR(255) NOT NULL DEFAULT '',
+			thank_you_to_type    VARCHAR(20) NOT NULL DEFAULT 'member',
+			thank_you_to_user_id BIGINT(20) UNSIGNED DEFAULT NULL,
+			thank_you_to_name    VARCHAR(255) NOT NULL DEFAULT '',
+			amount               DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+			note                 TEXT,
+			entry_date           DATE NOT NULL,
+			created_at           DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+			created_by_user_id   BIGINT(20) UNSIGNED NOT NULL,
+			PRIMARY KEY  (id),
+			KEY submitted_by_user_id (submitted_by_user_id),
+			KEY thank_you_to_user_id (thank_you_to_user_id),
+			KEY entry_date (entry_date)
+		) $charset;";
+
+		// -----------------------------------------------------------------------
+		// Referral records.
+		//
+		// referred_by_user_id : WP user ID of the group member who gave the referral.
+		// referred_by_name    : Snapshot of that member's display name at insert time.
+		// referred_to_name    : Always populated. Name of the person or business
+		//                       receiving the referral.
+		// referred_to_user_id : Nullable. WP user ID if the recipient is a group member.
+		// -----------------------------------------------------------------------
+		$sql[] = "CREATE TABLE {$wpdb->prefix}ist_referrals (
+			id                  BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
+			referred_by_user_id BIGINT(20) UNSIGNED NOT NULL,
+			referred_by_name    VARCHAR(255) NOT NULL DEFAULT '',
+			referred_to_name    VARCHAR(255) NOT NULL DEFAULT '',
+			referred_to_user_id BIGINT(20) UNSIGNED DEFAULT NULL,
+			status              VARCHAR(50) NOT NULL DEFAULT 'open',
+			note                TEXT,
+			entry_date          DATE NOT NULL,
+			created_at          DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+			created_by_user_id  BIGINT(20) UNSIGNED NOT NULL,
+			PRIMARY KEY  (id),
+			KEY referred_by_user_id (referred_by_user_id),
+			KEY entry_date (entry_date)
+		) $charset;";
+
+		// -----------------------------------------------------------------------
+		// Connect records.
+		//
+		// member_user_id         : WP user ID of the group member logging the connect.
+		// member_display_name    : Snapshot of that member's display name at insert time.
+		// connected_with_name    : Always populated. Name of the other party.
+		// connected_with_user_id : Nullable. WP user ID if the other party is a group member.
+		// -----------------------------------------------------------------------
+		$sql[] = "CREATE TABLE {$wpdb->prefix}ist_connects (
+			id                     BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
+			member_user_id         BIGINT(20) UNSIGNED NOT NULL,
+			member_display_name    VARCHAR(255) NOT NULL DEFAULT '',
+			connected_with_name    VARCHAR(255) NOT NULL DEFAULT '',
+			connected_with_user_id BIGINT(20) UNSIGNED DEFAULT NULL,
+			connect_type           VARCHAR(50) NOT NULL DEFAULT 'one-to-one',
+			note                   TEXT,
+			entry_date             DATE NOT NULL,
+			created_at             DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+			created_by_user_id     BIGINT(20) UNSIGNED NOT NULL,
+			PRIMARY KEY  (id),
+			KEY member_user_id (member_user_id),
+			KEY entry_date (entry_date)
+		) $charset;";
+
+		foreach ( $sql as $statement ) {
+			dbDelta( $statement );
+		}
+
+		update_option( 'ist_db_version', IST_VERSION );
+	}
+
+	/**
+	 * Set default plugin options.
+	 */
+	private static function set_defaults(): void {
+		add_option( 'ist_settings', array(
+			'date_format'      => 'Y-m-d',
+			'records_per_page' => 25,
+			'bb_group_id'      => 0,
+		) );
+	}
+}
