@@ -16,17 +16,17 @@ if ( ! defined( 'ABSPATH' ) ) {
 $buttons = array(
 	array(
 		'url'   => $form_urls['tyfcb'] ?? '',
-		'label' => __( 'Submit TYFCB', 'inc-stats-tracker' ),
+		'label' => __( 'Log Closed Business', 'inc-stats-tracker' ),
 		'class' => 'ist-action-tyfcb',
 	),
 	array(
 		'url'   => $form_urls['referral'] ?? '',
-		'label' => __( 'Submit Referral', 'inc-stats-tracker' ),
+		'label' => __( 'Log a Referral', 'inc-stats-tracker' ),
 		'class' => 'ist-action-referral',
 	),
 	array(
 		'url'   => $form_urls['connect'] ?? '',
-		'label' => __( 'Submit Connect', 'inc-stats-tracker' ),
+		'label' => __( 'Log a Connect', 'inc-stats-tracker' ),
 		'class' => 'ist-action-connect',
 	),
 );
@@ -34,6 +34,15 @@ $buttons = array(
 $visible = array_filter( $buttons, static fn( $b ) => ! empty( $b['url'] ) );
 
 if ( ! $visible ) {
+	if ( current_user_can( 'manage_options' ) ) {
+		$settings_url = admin_url( 'admin.php?page=ist-settings' );
+		printf(
+			'<p class="ist-notice ist-notice--error">%s <a href="%s">%s</a></p>',
+			esc_html__( 'INC Stats: Form page URLs are not configured.', 'inc-stats-tracker' ),
+			esc_url( $settings_url ),
+			esc_html__( 'Go to Settings →', 'inc-stats-tracker' )
+		);
+	}
 	return;
 }
 ?>

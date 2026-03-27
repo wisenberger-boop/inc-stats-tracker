@@ -31,7 +31,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 			<tbody>
 				<?php foreach ( $tyfcb_recent as $row ) : ?>
 					<tr>
-						<td><?php echo esc_html( $row->entry_date ); ?></td>
+						<td><?php echo esc_html( wp_date( 'M j, Y', strtotime( $row->entry_date ) ) ); ?></td>
 						<td><?php echo esc_html( $row->thank_you_to_name ); ?></td>
 						<td><?php echo esc_html( ist_format_currency( (float) $row->amount ) ); ?></td>
 						<td><?php echo esc_html( ucfirst( $row->business_type ) ); ?></td>
@@ -44,7 +44,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	<?php endif; ?>
 
 	<?php /* ----- Referrals ----- */ ?>
-	<h3><?php esc_html_e( 'Recent Referrals Given', 'inc-stats-tracker' ); ?></h3>
+	<h3><?php esc_html_e( 'Recent Referrals You Gave', 'inc-stats-tracker' ); ?></h3>
 	<?php if ( $referral_recent ) : ?>
 		<table class="ist-table">
 			<thead>
@@ -65,7 +65,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 				foreach ( $referral_recent as $row ) :
 				?>
 					<tr>
-						<td><?php echo esc_html( $row->entry_date ); ?></td>
+						<td><?php echo esc_html( wp_date( 'M j, Y', strtotime( $row->entry_date ) ) ); ?></td>
 						<td><?php echo esc_html( $row->referred_to_name ); ?></td>
 						<td><?php echo esc_html( ucwords( str_replace( '-', ' ', $row->referral_type ) ) ); ?></td>
 						<td><?php echo esc_html( $status_labels[ $row->status ] ?? $row->status ); ?></td>
@@ -98,7 +98,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 				foreach ( $connect_recent as $row ) :
 				?>
 					<tr>
-						<td><?php echo esc_html( $row->entry_date ); ?></td>
+						<td><?php echo esc_html( wp_date( 'M j, Y', strtotime( $row->entry_date ) ) ); ?></td>
 						<td><?php echo esc_html( $row->connected_with_name ); ?></td>
 						<td><?php echo esc_html( $where_labels[ $row->meet_where ] ?? $row->meet_where ); ?></td>
 					</tr>

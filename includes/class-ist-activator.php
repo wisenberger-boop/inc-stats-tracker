@@ -23,6 +23,19 @@ class IST_Activator {
 	}
 
 	/**
+	 * Run on admin_init to apply DB schema changes after a plugin update.
+	 *
+	 * dbDelta() adds new columns but never drops or renames them, so this is
+	 * safe to run on every admin load — the version guard keeps it cheap.
+	 */
+	public static function maybe_upgrade(): void {
+		if ( get_option( 'ist_db_version' ) !== IST_VERSION ) {
+			self::create_tables();
+			update_option( 'ist_db_version', IST_VERSION );
+		}
+	}
+
+	/**
 	 * Create custom DB tables via dbDelta.
 	 *
 	 * Column naming conventions:
@@ -30,6 +43,7 @@ class IST_Activator {
 	 *  - *_name columns store a display-name snapshot written at insert time.
 	 *  - entry_date  : user-supplied date of the business/reporting event. Used for reporting.
 	 *  - created_at  : auto-set MySQL insert timestamp. Audit/sort use only.
+	 *  - updated_at  : auto-updated MySQL timestamp on any row change. NULL until first edit.
 	 *  - created_by_user_id : WP user who physically entered the record.
 	 *
 	 * Controlled vocabularies (enforced by services, not DB constraints):
@@ -74,6 +88,7 @@ class IST_Activator {
 			note                 TEXT,
 			entry_date           DATE NOT NULL,
 			created_at           DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+			updated_at           DATETIME DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
 			created_by_user_id   BIGINT(20) UNSIGNED NOT NULL,
 			PRIMARY KEY  (id),
 			KEY submitted_by_user_id (submitted_by_user_id),
@@ -104,6 +119,7 @@ class IST_Activator {
 			note                TEXT,
 			entry_date          DATE NOT NULL,
 			created_at          DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+			updated_at          DATETIME DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
 			created_by_user_id  BIGINT(20) UNSIGNED NOT NULL,
 			PRIMARY KEY  (id),
 			KEY referred_by_user_id (referred_by_user_id),
@@ -129,6 +145,7 @@ class IST_Activator {
 			note                   TEXT,
 			entry_date             DATE NOT NULL,
 			created_at             DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+			updated_at             DATETIME DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
 			created_by_user_id     BIGINT(20) UNSIGNED NOT NULL,
 			PRIMARY KEY  (id),
 			KEY member_user_id (member_user_id),

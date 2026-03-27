@@ -106,7 +106,7 @@ class IST_Fiscal_Year {
 		}
 
 		// Cross-calendar-year fiscal year — show both years, e.g. 'FY 2025–26'.
-		return sprintf( 'FY %d\u{2013}%02d', $fy_year, ( $fy_year + 1 ) % 100 );
+		return sprintf( "FY %d\u{2013}%02d", $fy_year, ( $fy_year + 1 ) % 100 );
 	}
 
 	/**
@@ -146,6 +146,63 @@ class IST_Fiscal_Year {
 				'end'   => $prior_end,
 				'label' => self::get_label( $prior_ref, $group_id ),
 			),
+		);
+	}
+
+	/**
+	 * Return fiscal year progress metrics for a given reference date.
+	 *
+	 * All date arithmetic uses day-counts so the result is timezone-safe when
+	 * called via wp_date(). The returned array is intentionally flat so it can
+	 * be extracted directly into a template via ist_get_template().
+	 *
+	 * Assumption: "today" is the last elapsed day (inclusive). A FY that starts
+	 * today has 1 elapsed day. A FY that ends today is 100 % complete.
+	 *
+	 * This method is context-only — it does NOT change how stat totals are
+	 * queried. Totals are always driven by entry_date in IST_Stats_Query.
+	 *
+	 * @param string $reference_date  Y-m-d. Defaults to today in site timezone.
+	 * @param int    $group_id        0 = resolve from configured group.
+	 * @return array {
+	 *     @type string $fy_start        Y-m-d start of fiscal year.
+	 *     @type string $fy_end          Y-m-d end of fiscal year.
+	 *     @type string $fy_label        Human-readable label (e.g. "FY 2025–26").
+	 *     @type int    $total_days      Calendar days in this fiscal year (365 or 366).
+	 *     @type int    $elapsed_days    Days elapsed from fy_start through today (≥ 1).
+	 *     @type int    $remaining_days  Days from today through fy_end (≥ 0).
+	 *     @type float  $percent_elapsed Percentage 0–100, rounded to one decimal.
+	 * }
+	 */
+	public static function get_progress( string $reference_date = '', int $group_id = 0 ): array {
+		$today    = $reference_date ?: wp_date( 'Y-m-d' );
+		$fy_start = self::get_fy_start( $today, $group_id );
+		$fy_end   = self::get_fy_end( $today, $group_id );
+		$fy_label = self::get_label( $today, $group_id );
+
+		$start_dt   = new DateTime( $fy_start );
+		$end_dt     = new DateTime( $fy_end );
+		$today_dt   = new DateTime( $today );
+
+		// Total days = end − start + 1 (both endpoints inclusive).
+		$total_days = (int) $start_dt->diff( $end_dt )->days + 1;
+
+		// Elapsed days = today − start + 1 (today counts as an elapsed day).
+		$elapsed_days = (int) $start_dt->diff( $today_dt )->days + 1;
+		// Clamp: should always be ≥ 1 and ≤ total_days, but guard defensively.
+		$elapsed_days = max( 1, min( $elapsed_days, $total_days ) );
+
+		$remaining_days  = $total_days - $elapsed_days;
+		$percent_elapsed = round( ( $elapsed_days / $total_days ) * 100, 1 );
+
+		return array(
+			'fy_start'        => $fy_start,
+			'fy_end'          => $fy_end,
+			'fy_label'        => $fy_label,
+			'total_days'      => $total_days,
+			'elapsed_days'    => $elapsed_days,
+			'remaining_days'  => $remaining_days,
+			'percent_elapsed' => $percent_elapsed,
 		);
 	}
 

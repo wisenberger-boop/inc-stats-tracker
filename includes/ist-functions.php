@@ -61,21 +61,54 @@ function ist_get_settings(): array {
 }
 
 /**
- * Return the form page URLs stored in ist_settings.
+ * Return the form page URLs for the three submission forms.
  *
- * Keys: 'tyfcb', 'referral', 'connect'.
- * Values are full URLs to the WP pages that host the corresponding shortcodes.
- * Empty string means no page has been configured.
+ * Priority:
+ *   1. Admin-configured WordPress page URLs (ist_settings form_url_* keys).
+ *      Use this when the forms live on dedicated WP pages with shortcodes.
+ *   2. BuddyBoss profile sub-nav URLs registered by IST_Profile_Nav.
+ *      These are generated automatically for any logged-in user with an
+ *      active BuddyPress/BuddyBoss install. No manual configuration needed.
+ *
+ * The sub-nav fallback is why form CTAs appear on both My Stats and Group
+ * Stats Reports without any admin setup — the submit-actions partial reads
+ * this function and will always receive real URLs when BP is active.
+ *
+ * Returns empty string for any URL that cannot be resolved (e.g. on a
+ * non-BP install where no settings have been configured).
  *
  * @return array { tyfcb: string, referral: string, connect: string }
  */
 function ist_get_form_urls(): array {
 	$settings = ist_get_settings();
-	return array(
+
+	$urls = array(
 		'tyfcb'   => esc_url_raw( $settings['form_url_tyfcb']   ?? '' ),
 		'referral' => esc_url_raw( $settings['form_url_referral'] ?? '' ),
 		'connect'  => esc_url_raw( $settings['form_url_connect']  ?? '' ),
 	);
+
+	// Fallback: BuddyBoss/BuddyPress profile sub-nav URLs.
+	// Only applied on the front end for logged-in users with BP active.
+	// IST_Profile_Nav::get_base_url() is safe to call here because this
+	// function is called at runtime, not at file-parse time.
+	if ( ! is_admin() && is_user_logged_in() && class_exists( 'IST_Profile_Nav' ) ) {
+		$base = IST_Profile_Nav::get_base_url(); // e.g. https://example.com/members/jane/ist-my-stats/
+		// Guard against an empty or relative-only base (e.g. if bp_loggedin_user_domain returns '').
+		if ( $base && str_starts_with( $base, 'http' ) ) {
+			if ( empty( $urls['tyfcb'] ) ) {
+				$urls['tyfcb'] = $base . IST_Profile_Nav::SLUG_TYFCB . '/';
+			}
+			if ( empty( $urls['referral'] ) ) {
+				$urls['referral'] = $base . IST_Profile_Nav::SLUG_REFERRAL . '/';
+			}
+			if ( empty( $urls['connect'] ) ) {
+				$urls['connect'] = $base . IST_Profile_Nav::SLUG_CONNECT . '/';
+			}
+		}
+	}
+
+	return $urls;
 }
 
 /**

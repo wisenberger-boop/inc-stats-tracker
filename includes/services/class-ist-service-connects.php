@@ -82,15 +82,24 @@ class IST_Service_Connects {
 		$member_display_name = $member_user->display_name;
 
 		// -----------------------------------------------------------------------
-		// Other party — free-text name required.
+		// Other party — name required; may be resolved from user ID.
 		// -----------------------------------------------------------------------
-		$connected_with_name = sanitize_text_field( $input['connected_with_name'] ?? '' );
+		$connected_with_type    = sanitize_key( $input['connected_with_type'] ?? 'other' );
+		$connected_with_user_id = absint( $input['connected_with_user_id'] ?? 0 ) ?: null;
+		$connected_with_name    = sanitize_text_field( $input['connected_with_name'] ?? '' );
+
+		// When the member panel is active, resolve name (and validate the user).
+		if ( 'member' === $connected_with_type && $connected_with_user_id ) {
+			$other_user = get_userdata( $connected_with_user_id );
+			if ( ! $other_user ) {
+				return new WP_Error( 'ist_invalid_connected_with', __( 'The selected member is not a valid user.', 'inc-stats-tracker' ) );
+			}
+			$connected_with_name = $other_user->display_name;
+		}
+
 		if ( '' === $connected_with_name ) {
 			return new WP_Error( 'ist_missing_connected_with', __( 'A connected-with name is required.', 'inc-stats-tracker' ) );
 		}
-
-		// Optional user ID for other party — schema support; not committed in MVP frontend.
-		$connected_with_user_id = absint( $input['connected_with_user_id'] ?? 0 ) ?: null;
 
 		// -----------------------------------------------------------------------
 		// Meet where — required for new records; '' accepted for historical import.

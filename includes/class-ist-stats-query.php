@@ -111,6 +111,182 @@ class IST_Stats_Query {
 	}
 
 	// -------------------------------------------------------------------------
+	// Trend data (chart support)
+	// -------------------------------------------------------------------------
+
+	/**
+	 * Three-month trend data for chart rendering.
+	 *
+	 * Returns 3 calendar-month buckets ordered oldest → newest:
+	 *   [0] Two months ago (full month)
+	 *   [1] Last month     (full month)
+	 *   [2] Current month  (month-to-date, end = $today)
+	 *
+	 * Months are calendar months — not fiscal months. The current-month bucket
+	 * is always month-to-date so today's data is included immediately.
+	 *
+	 * Implementation: calls the existing totals methods 3 × 3 = 9 queries.
+	 * Each query is a simple indexed COUNT/SUM — acceptable cost.
+	 *
+	 * @param string $today    Y-m-d  Reference date (normally today).
+	 * @param array  $user_ids Scope to these user IDs. Empty = all records.
+	 * @return array  Three items, each:
+	 *   {
+	 *     label        string  e.g. "Jan 2026"
+	 *     tyfcb_amount float   Closed Business total amount
+	 *     ref_count    int     Referral count
+	 *     con_count    int     Connect count
+	 *   }
+	 */
+	public static function three_month_trend( string $today, array $user_ids = array() ): array {
+		$buckets = array();
+
+		for ( $offset = 2; $offset >= 0; $offset-- ) {
+			$month_ts = strtotime( "-{$offset} months", strtotime( $today ) );
+			$start    = wp_date( 'Y-m-01', $month_ts );
+			$end      = ( 0 === $offset ) ? $today : wp_date( 'Y-m-t', $month_ts );
+			$label    = wp_date( 'M Y', $month_ts );
+
+			$tyfcb = self::tyfcb_totals( $start, $end, $user_ids );
+			$refs  = self::referral_totals( $start, $end, $user_ids );
+			$cons  = self::connect_totals( $start, $end, $user_ids );
+
+			$buckets[] = array(
+				'label'        => $label,
+				'tyfcb_amount' => $tyfcb['amount'],
+				'ref_count'    => $refs['count'],
+				'con_count'    => $cons['count'],
+			);
+		}
+
+		return $buckets;
+	}
+
+	// -------------------------------------------------------------------------
+	// FY monthly trend (chart support)
+	// -------------------------------------------------------------------------
+
+	/**
+	 * Monthly totals for every elapsed month in the current fiscal year.
+	 *
+	 * Returns one bucket per calendar month from $fy_start through the month
+	 * containing $today, ordered oldest → newest. The current month is always
+	 * month-to-date (end = $today). All prior months use their full end date.
+	 *
+	 * Implementation: 3 queries × N elapsed months. For a typical 9-month FY
+	 * elapsed period this is 27 queries — each a simple indexed COUNT/SUM.
+	 *
+	 * @param string $fy_start  Y-m-d first day of the current fiscal year.
+	 * @param string $today     Y-m-d reference date (normally today).
+	 * @param array  $user_ids  Scope to these user IDs. Empty = all records.
+	 * @return array  One item per elapsed FY month, each:
+	 *   {
+	 *     label        string  e.g. "Jul 2025"
+	 *     tyfcb_amount float
+	 *     ref_count    int
+	 *     con_count    int
+	 *   }
+	 */
+	public static function fy_monthly_trend( string $fy_start, string $today, array $user_ids = array() ): array {
+		$buckets  = array();
+		$cursor   = new DateTime( $fy_start ); // always 1st of a month
+		$today_dt = new DateTime( $today );
+		$today_ym = $today_dt->format( 'Y-m' );
+
+		while ( $cursor->format( 'Y-m' ) <= $today_ym ) {
+			$start     = $cursor->format( 'Y-m-01' );
+			$cursor_ym = $cursor->format( 'Y-m' );
+
+			// End-of-month calculation: do NOT use wp_date( 'Y-m-t', strtotime( $start ) ).
+			// strtotime() parses $start as UTC midnight; wp_date() converts to the site
+			// timezone. On any UTC-minus site (all US timezones) midnight UTC July 1 is
+			// still June 30 locally, so 'Y-m-t' returns the last day of the PREVIOUS month,
+			// making every prior-month BETWEEN clause inverted (start > end = 0 rows).
+			// DateTime::modify() stays in the object's own timezone (UTC) — no conversion.
+			if ( $cursor_ym === $today_ym ) {
+				$end = $today;
+			} else {
+				$end_dt = clone $cursor;
+				$end_dt->modify( 'last day of this month' );
+				$end = $end_dt->format( 'Y-m-d' );
+			}
+
+			$label = wp_date( 'M Y', strtotime( $start ) );
+
+			$tyfcb = self::tyfcb_totals( $start, $end, $user_ids );
+			$refs  = self::referral_totals( $start, $end, $user_ids );
+			$cons  = self::connect_totals( $start, $end, $user_ids );
+
+			$buckets[] = array(
+				'label'        => $label,
+				'tyfcb_amount' => $tyfcb['amount'],
+				'ref_count'    => $refs['count'],
+				'con_count'    => $cons['count'],
+			);
+
+			$cursor->modify( '+1 month' );
+		}
+
+		return $buckets;
+	}
+
+	// -------------------------------------------------------------------------
+	// YTD same-point comparison
+	// -------------------------------------------------------------------------
+
+	/**
+	 * Year-to-date totals for two equivalent date windows (current FY YTD vs
+	 * the same elapsed point in the prior fiscal year).
+	 *
+	 * This method is date-range-agnostic: the caller computes both windows.
+	 * Typical usage:
+	 *   $current_start = IST_Fiscal_Year::get_fy_start( $today, $group_id )
+	 *   $current_end   = $today
+	 *   $prior_end     = wp_date( 'Y-m-d', strtotime( '-1 year', strtotime( $today ) ) )
+	 *   $prior_start   = IST_Fiscal_Year::get_fy_start( $prior_end, $group_id )
+	 *
+	 * @param string $current_start  Y-m-d start of the current FY.
+	 * @param string $current_end    Y-m-d today (current FY YTD end).
+	 * @param string $prior_start    Y-m-d start of the prior FY.
+	 * @param string $prior_end      Y-m-d same elapsed calendar point, one year ago.
+	 * @param array  $user_ids       Scope. Empty = all records.
+	 * @return array {
+	 *     current: { tyfcb_amount, tyfcb_count, ref_count, con_count }
+	 *     prior:   { tyfcb_amount, tyfcb_count, ref_count, con_count }
+	 * }
+	 */
+	public static function ytd_comparison(
+		string $current_start,
+		string $current_end,
+		string $prior_start,
+		string $prior_end,
+		array  $user_ids = array()
+	): array {
+		$ct = self::tyfcb_totals( $current_start, $current_end, $user_ids );
+		$cr = self::referral_totals( $current_start, $current_end, $user_ids );
+		$cc = self::connect_totals( $current_start, $current_end, $user_ids );
+
+		$pt = self::tyfcb_totals( $prior_start, $prior_end, $user_ids );
+		$pr = self::referral_totals( $prior_start, $prior_end, $user_ids );
+		$pc = self::connect_totals( $prior_start, $prior_end, $user_ids );
+
+		return array(
+			'current' => array(
+				'tyfcb_amount' => $ct['amount'],
+				'tyfcb_count'  => $ct['count'],
+				'ref_count'    => $cr['count'],
+				'con_count'    => $cc['count'],
+			),
+			'prior'   => array(
+				'tyfcb_amount' => $pt['amount'],
+				'tyfcb_count'  => $pt['count'],
+				'ref_count'    => $pr['count'],
+				'con_count'    => $pc['count'],
+			),
+		);
+	}
+
+	// -------------------------------------------------------------------------
 	// Leaderboards
 	// -------------------------------------------------------------------------
 

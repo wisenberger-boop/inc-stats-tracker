@@ -96,15 +96,24 @@ class IST_Service_Referrals {
 		$referred_by_name = $referring_user->display_name;
 
 		// -----------------------------------------------------------------------
-		// Referral recipient — free-text name required.
+		// Referral recipient — name required; may be resolved from user ID.
 		// -----------------------------------------------------------------------
-		$referred_to_name = sanitize_text_field( $input['referred_to_name'] ?? '' );
+		$referred_to_type    = sanitize_key( $input['referred_to_type'] ?? 'other' );
+		$referred_to_user_id = absint( $input['referred_to_user_id'] ?? 0 ) ?: null;
+		$referred_to_name    = sanitize_text_field( $input['referred_to_name'] ?? '' );
+
+		// When the member panel is active, resolve name (and validate the user).
+		if ( 'member' === $referred_to_type && $referred_to_user_id ) {
+			$recipient_user = get_userdata( $referred_to_user_id );
+			if ( ! $recipient_user ) {
+				return new WP_Error( 'ist_invalid_recipient', __( 'The selected recipient member is not a valid user.', 'inc-stats-tracker' ) );
+			}
+			$referred_to_name = $recipient_user->display_name;
+		}
+
 		if ( '' === $referred_to_name ) {
 			return new WP_Error( 'ist_missing_referred_to', __( 'A referral recipient name is required.', 'inc-stats-tracker' ) );
 		}
-
-		// Optional user ID for recipient — schema support; not committed in MVP frontend.
-		$referred_to_user_id = absint( $input['referred_to_user_id'] ?? 0 ) ?: null;
 
 		// -----------------------------------------------------------------------
 		// Referral type — required for new records; '' accepted for historical import.

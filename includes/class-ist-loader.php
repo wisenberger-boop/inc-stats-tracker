@@ -56,6 +56,7 @@ class IST_Loader {
 		// Import / Export.
 		require_once IST_PLUGIN_DIR . 'includes/import-export/class-ist-importer.php';
 		require_once IST_PLUGIN_DIR . 'includes/import-export/class-ist-exporter.php';
+		require_once IST_PLUGIN_DIR . 'includes/import-export/class-ist-historical-importer.php';
 
 		// Admin.
 		if ( is_admin() ) {
@@ -66,6 +67,7 @@ class IST_Loader {
 			require_once IST_PLUGIN_DIR . 'admin/class-ist-admin-members.php';
 			require_once IST_PLUGIN_DIR . 'admin/class-ist-admin-reports.php';
 			require_once IST_PLUGIN_DIR . 'admin/class-ist-admin-settings.php';
+			require_once IST_PLUGIN_DIR . 'admin/class-ist-admin-import.php';
 		}
 
 		// Frontend.

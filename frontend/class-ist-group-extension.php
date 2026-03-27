@@ -30,7 +30,7 @@ class IST_Group_Extension extends BP_Group_Extension {
 	 */
 	public function __construct() {
 		$args = array(
-			'name'              => __( 'Group Stats Reports', 'inc-stats-tracker' ),
+			'name'              => __( 'INC Stats Reports', 'inc-stats-tracker' ),
 			'slug'              => 'ist-group-stats',
 			'nav_item_position' => 80,
 			'enable_nav_item'   => true,
@@ -82,9 +82,10 @@ class IST_Group_Extension extends BP_Group_Extension {
 		$month_start = wp_date( 'Y-m-01' );
 		$month_end   = $today;
 
-		$fy_start = IST_Fiscal_Year::get_fy_start( $today, $group_id );
-		$fy_end   = $today;
-		$fy_label = IST_Fiscal_Year::get_label( $today, $group_id );
+		$fy_start    = IST_Fiscal_Year::get_fy_start( $today, $group_id );
+		$fy_end      = $today;
+		$fy_label    = IST_Fiscal_Year::get_label( $today, $group_id );
+		$fy_progress = IST_Fiscal_Year::get_progress( $today, $group_id );
 
 		// -----------------------------------------------------------------------
 		// KPI totals — all group members combined.
@@ -103,16 +104,41 @@ class IST_Group_Extension extends BP_Group_Extension {
 		$referral_leaderboard = IST_Stats_Query::referral_leaderboard( $fy_start, $fy_end, $user_ids );
 		$connect_leaderboard  = IST_Stats_Query::connect_leaderboard( $fy_start, $fy_end, $user_ids );
 
+		// 3-month trend data for charts.
+		$trend_data = IST_Stats_Query::three_month_trend( $today, $user_ids );
+
+		// FY monthly trend and YTD same-point comparison.
+		$fy_monthly_data = IST_Stats_Query::fy_monthly_trend( $fy_start, $today, $user_ids );
+
+		$prior_equiv_end = wp_date( 'Y-m-d', strtotime( '-1 year', strtotime( $today ) ) );
+		$prior_fy_start  = IST_Fiscal_Year::get_fy_start( $prior_equiv_end, $group_id );
+		$prior_fy_label  = IST_Fiscal_Year::get_label( $prior_equiv_end, $group_id );
+		$ytd_data        = IST_Stats_Query::ytd_comparison(
+			$fy_start, $today,
+			$prior_fy_start, $prior_equiv_end,
+			$user_ids
+		);
+
 		$form_urls = ist_get_form_urls();
+
+		// Required by the form templates rendered inside the modal containers.
+		$group_members = $members;
+		$current_user  = wp_get_current_user();
+		$my_stats_url  = IST_Profile_Nav::get_base_url() . IST_Profile_Nav::SLUG_SUMMARY . '/';
+		$atts          = array();
 
 		ist_get_template( 'frontend/tmpl-group-stats-reports.php', compact(
 			'fy_label',
+			'fy_progress',
 			'month_start',
 			'tyfcb_month', 'tyfcb_fy',
 			'ref_month', 'ref_fy',
 			'con_month', 'con_fy',
 			'tyfcb_leaderboard', 'referral_leaderboard', 'connect_leaderboard',
-			'form_urls'
+			'trend_data',
+			'fy_monthly_data', 'ytd_data', 'prior_fy_label',
+			'form_urls',
+			'group_members', 'current_user', 'my_stats_url', 'atts'
 		) );
 	}
 }
