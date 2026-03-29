@@ -49,6 +49,8 @@ if ( is_admin() ) {
 
 	// Historical import POST handlers.
 	$ist_import_handler = new IST_Admin_Import();
-	add_action( 'admin_post_ist_run_historical_import', array( $ist_import_handler, 'handle_run_import' ) );
-	add_action( 'admin_post_ist_reset_import_hashes',   array( $ist_import_handler, 'handle_reset_hashes' ) );
+	add_action( 'admin_post_ist_run_historical_import',  array( $ist_import_handler, 'handle_run_import' ) );
+	add_action( 'admin_post_ist_reset_import_hashes',    array( $ist_import_handler, 'handle_reset_hashes' ) );
+	add_action( 'admin_post_ist_mark_legacy_as_imported', array( $ist_import_handler, 'handle_mark_legacy' ) );
+	add_action( 'admin_post_ist_purge_imported_records',  array( $ist_import_handler, 'handle_purge_imported' ) );
 }

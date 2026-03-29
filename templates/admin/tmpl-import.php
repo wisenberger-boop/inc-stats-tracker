@@ -46,6 +46,34 @@ $already_complete = $imported_count > 0 && $imported_count >= $total_csv_rows;
 		</div>
 	<?php endif; ?>
 
+	<?php if ( isset( $_GET['legacy_marked'] ) ) : // phpcs:ignore WordPress.Security.NonceVerification ?>
+		<div class="notice notice-success is-dismissible">
+			<p>
+				<?php
+				printf(
+					/* translators: %d: number of rows re-tagged. */
+					esc_html__( 'Done — %d row(s) re-tagged as imported. You can now use Purge Imported Records to reset and re-import.', 'inc-stats-tracker' ),
+					(int) $_GET['legacy_marked'] // phpcs:ignore WordPress.Security.NonceVerification
+				);
+				?>
+			</p>
+		</div>
+	<?php endif; ?>
+
+	<?php if ( isset( $_GET['purge_done'] ) ) : // phpcs:ignore WordPress.Security.NonceVerification ?>
+		<div class="notice notice-warning is-dismissible">
+			<p>
+				<?php
+				printf(
+					/* translators: %d: number of rows deleted. */
+					esc_html__( 'Purge complete — %d imported row(s) deleted. Import history also cleared. You can now re-run the import.', 'inc-stats-tracker' ),
+					(int) $_GET['purge_done'] // phpcs:ignore WordPress.Security.NonceVerification
+				);
+				?>
+			</p>
+		</div>
+	<?php endif; ?>
+
 	<?php if ( $already_complete && ! $results ) : ?>
 		<div class="notice notice-info">
 			<p>
@@ -231,6 +259,50 @@ $already_complete = $imported_count > 0 && $imported_count >= $total_csv_rows;
 		<?php wp_nonce_field( 'ist_reset_import_hashes' ); ?>
 		<input type="hidden" name="action" value="ist_reset_import_hashes">
 		<?php submit_button( __( 'Reset Import History', 'inc-stats-tracker' ), 'delete', 'submit', false ); ?>
+	</form>
+
+	<?php if ( $legacy_native_count > 0 ) : ?>
+	<hr style="margin:40px 0 24px;">
+	<h2><?php esc_html_e( 'Mark Legacy Rows as Imported', 'inc-stats-tracker' ); ?></h2>
+	<div class="notice notice-warning inline" style="margin:0 0 16px;">
+		<p>
+			<strong><?php esc_html_e( 'Pre-0.2.26 migration utility — dev/staging only.', 'inc-stats-tracker' ); ?></strong>
+			<?php esc_html_e( 'Do not run this on a live installation that already has genuine native member submissions.', 'inc-stats-tracker' ); ?>
+		</p>
+	</div>
+	<p>
+		<?php
+		printf(
+			/* translators: %d: number of rows with data_source='native'. */
+			esc_html__( '%d row(s) currently have data_source = "native". This likely means they were imported before version 0.2.26 added source tracking, and received the column default instead of being tagged as imported.', 'inc-stats-tracker' ),
+			esc_html( number_format( $legacy_native_count ) )
+		);
+		?>
+	</p>
+	<p>
+		<?php esc_html_e( 'Clicking the button below will re-tag all of those rows as data_source = "import", making them visible to the Purge Imported Records tool.', 'inc-stats-tracker' ); ?>
+	</p>
+	<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>"
+	      onsubmit="return confirm('<?php esc_attr_e( 'This will re-tag all data_source="native" rows as "import". Only do this if ALL existing rows are pre-0.2.26 historical imports with no native member submissions. Continue?', 'inc-stats-tracker' ); ?>')">
+		<?php wp_nonce_field( 'ist_mark_legacy_as_imported' ); ?>
+		<input type="hidden" name="action" value="ist_mark_legacy_as_imported">
+		<?php submit_button( __( 'Mark Legacy Rows as Imported', 'inc-stats-tracker' ), 'secondary', 'submit', false ); ?>
+	</form>
+	<?php endif; ?>
+
+	<hr style="margin:40px 0 24px;">
+	<h2><?php esc_html_e( 'Purge Imported Records', 'inc-stats-tracker' ); ?></h2>
+	<p>
+		<?php esc_html_e( 'Permanently deletes all database rows that were inserted by the historical importer (data_source = "import") from all three tables, then clears the import history. Native plugin submissions are never affected.', 'inc-stats-tracker' ); ?>
+	</p>
+	<p>
+		<?php esc_html_e( 'Use this when you need to re-import from scratch — for example, after updating the source CSV files or the member lookup. After purging, simply run the import again.', 'inc-stats-tracker' ); ?>
+	</p>
+	<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>"
+	      onsubmit="return confirm('<?php esc_attr_e( 'This will permanently delete all imported records. Native plugin submissions will not be affected. Are you sure?', 'inc-stats-tracker' ); ?>')">
+		<?php wp_nonce_field( 'ist_purge_imported_records' ); ?>
+		<input type="hidden" name="action" value="ist_purge_imported_records">
+		<?php submit_button( __( 'Purge Imported Records', 'inc-stats-tracker' ), 'delete', 'submit', false ); ?>
 	</form>
 
 </div>

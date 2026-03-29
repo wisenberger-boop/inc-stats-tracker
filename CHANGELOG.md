@@ -6,6 +6,68 @@ Versions follow [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [0.2.27] — 2026-03-29
+
+### Added — Pre-0.2.26 legacy row migration utility
+
+**Problem:** When the `data_source` column was added in 0.2.26, `dbDelta` backfilled the column DEFAULT (`'native'`) on all existing rows. Dev/staging installs that imported historical data before 0.2.26 therefore had all rows tagged `'native'`, making the Purge Imported Records tool find nothing.
+
+**Solution:** A one-time migration utility that re-tags `data_source='native'` rows as `'import'`, visible only when such rows exist, and intended only for environments where all existing rows are pre-0.2.26 historical imports (no genuine native member submissions yet).
+
+#### Changes
+
+**`class-ist-historical-importer.php`** — two new public methods:
+- `get_legacy_native_count()`: `SELECT COUNT(*) WHERE data_source = 'native'` summed across all three tables. Used by the controller to conditionally show the migration section.
+- `mark_legacy_as_imported()`: `UPDATE … SET data_source='import' WHERE data_source='native'` on all three tables. Returns per-table row counts.
+
+**`class-ist-admin-import.php`** — `handle_mark_legacy()` POST handler. Calls `mark_legacy_as_imported()`, redirects with `legacy_marked={total}` query arg. Controller now passes `$legacy_native_count` to template.
+
+**`ist-hooks.php`** — registered `admin_post_ist_mark_legacy_as_imported`.
+
+**`templates/admin/tmpl-import.php`**:
+- `legacy_marked` notice banner (shows re-tagged row count after redirect).
+- **Mark Legacy Rows as Imported** section — conditional on `$legacy_native_count > 0`, so it disappears automatically once there are no more `'native'` rows. Includes inline warning notice, row count, explanation, JS confirm with explicit caveat about native submissions.
+- Section uses a secondary (non-delete) button style to distinguish it visually from the destructive Purge action.
+
+**Lifecycle on dev:** Mark Legacy → rows flip to `'import'` → section disappears → Purge Imported Records works correctly → re-import cleanly.
+
+---
+
+## [0.2.26] — 2026-03-29
+
+### Added — data_source column and Purge Imported Records utility
+
+**Purpose:** Safely distinguish imported historical records from native plugin submissions at the database level. Once the production database contains both imported seed data and live member submissions, there must be a way to reset or re-import without touching live records.
+
+#### Schema changes (`class-ist-activator.php`)
+
+Added `data_source VARCHAR(20) NOT NULL DEFAULT 'native'` to all three tables:
+- `wp_ist_tyfcb`
+- `wp_ist_referrals`
+- `wp_ist_connects`
+
+Indexed (`KEY data_source`) on each table for efficient `WHERE data_source = 'import'` deletes. Column added via additive `dbDelta` — safe on existing installs, picked up automatically via `IST_Activator::maybe_upgrade()` on admin load.
+
+**Default value `'native'`:** Any row inserted without specifying `data_source` (i.e. all existing native form submissions) gets `'native'` automatically. No service layer changes required.
+
+#### Importer changes (`class-ist-historical-importer.php`)
+
+All three importers (`import_tyfcb`, `import_referrals`, `import_connects`) now include `'data_source' => 'import'` in every insert data array.
+
+**New method `purge_imported()`:** Deletes all rows where `data_source = 'import'` from all three tables using `$wpdb->delete()`, then calls `reset_hashes()` to clear the hash store so the import can be run again cleanly. Returns `{ tyfcb, referrals, connects }` row counts. Native submissions (`data_source = 'native'`) are never touched.
+
+#### Admin changes
+
+**`class-ist-admin-import.php`:** New `handle_purge_imported()` POST handler. Calls `purge_imported()`, passes total row count through redirect query arg `purge_done`.
+
+**`ist-hooks.php`:** Registered `admin_post_ist_purge_imported_records` action.
+
+**`templates/admin/tmpl-import.php`:**
+- Added `purge_done` notice banner (shows deleted row count after redirect).
+- Added **Purge Imported Records** section below the existing Reset Import History section — separate `<form>` with JS confirm, nonce-protected, styled as a danger action.
+
+---
+
 ## [0.2.25] — 2026-03-28
 
 ### Fixed — Fieldset legend visual positioning across all three forms

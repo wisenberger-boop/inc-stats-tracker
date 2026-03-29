@@ -41,11 +41,12 @@ class IST_Admin_Import {
 			wp_die( esc_html__( 'Access denied.', 'inc-stats-tracker' ) );
 		}
 
-		$importer       = new IST_Historical_Importer();
-		$csv_stats      = $importer->get_csv_stats();
-		$member_count   = $importer->get_member_count();
-		$lookup_found   = $importer->lookup_file_exists();
-		$imported_count = $importer->get_imported_count();
+		$importer          = new IST_Historical_Importer();
+		$csv_stats         = $importer->get_csv_stats();
+		$member_count      = $importer->get_member_count();
+		$lookup_found      = $importer->lookup_file_exists();
+		$imported_count    = $importer->get_imported_count();
+		$legacy_native_count = $importer->get_legacy_native_count();
 
 		// Pick up results stored by the POST handler after redirect.
 		$transient_key = self::TRANSIENT_PREFIX . get_current_user_id();
@@ -57,6 +58,7 @@ class IST_Admin_Import {
 			'member_count',
 			'lookup_found',
 			'imported_count',
+			'legacy_native_count',
 			'results'
 		) );
 	}
@@ -115,6 +117,58 @@ class IST_Admin_Import {
 
 		wp_safe_redirect( add_query_arg(
 			array( 'page' => 'ist-import', 'hashes_reset' => '1' ),
+			admin_url( 'admin.php' )
+		) );
+		exit;
+	}
+
+	/**
+	 * Handle the "Mark Legacy Rows as Imported" form submission.
+	 *
+	 * Updates data_source='native' → 'import' across all three tables.
+	 * Intended for dev/staging installs where rows were imported before the
+	 * data_source column existed (pre-0.2.26). Should NOT be run on a live
+	 * installation that already has genuine native member submissions.
+	 */
+	public function handle_mark_legacy(): void {
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_die( esc_html__( 'Access denied.', 'inc-stats-tracker' ) );
+		}
+
+		check_admin_referer( 'ist_mark_legacy_as_imported' );
+
+		$importer = new IST_Historical_Importer();
+		$counts   = $importer->mark_legacy_as_imported();
+		$total    = array_sum( $counts );
+
+		wp_safe_redirect( add_query_arg(
+			array( 'page' => 'ist-import', 'legacy_marked' => $total ),
+			admin_url( 'admin.php' )
+		) );
+		exit;
+	}
+
+	/**
+	 * Handle the "Purge Imported Records" form submission.
+	 *
+	 * Deletes all rows flagged data_source='import' from all three tables and
+	 * clears the hash store. Only affects imported rows — native plugin
+	 * submissions are never touched. Requires a JS confirm in the UI.
+	 */
+	public function handle_purge_imported(): void {
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_die( esc_html__( 'Access denied.', 'inc-stats-tracker' ) );
+		}
+
+		check_admin_referer( 'ist_purge_imported_records' );
+
+		$importer = new IST_Historical_Importer();
+		$counts   = $importer->purge_imported();
+
+		$total = array_sum( $counts );
+
+		wp_safe_redirect( add_query_arg(
+			array( 'page' => 'ist-import', 'purge_done' => $total ),
 			admin_url( 'admin.php' )
 		) );
 		exit;

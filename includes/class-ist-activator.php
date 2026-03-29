@@ -95,6 +95,7 @@ class IST_Activator {
 			original_referrer_type       VARCHAR(20)  NOT NULL DEFAULT '',
 			referral_lineage_type        VARCHAR(50)  NOT NULL DEFAULT '',
 			attribution_notes            TEXT,
+			data_source          VARCHAR(20)  NOT NULL DEFAULT 'native',
 			entry_date           DATE NOT NULL,
 			created_at           DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
 			updated_at           DATETIME DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
@@ -103,6 +104,7 @@ class IST_Activator {
 			KEY submitted_by_user_id (submitted_by_user_id),
 			KEY thank_you_to_user_id (thank_you_to_user_id),
 			KEY attribution_model (attribution_model),
+			KEY data_source (data_source),
 			KEY entry_date (entry_date)
 		) $charset;";
 
@@ -127,12 +129,14 @@ class IST_Activator {
 			referral_type       VARCHAR(20) NOT NULL DEFAULT '',
 			status              VARCHAR(50) NOT NULL DEFAULT '',
 			note                TEXT,
+			data_source         VARCHAR(20) NOT NULL DEFAULT 'native',
 			entry_date          DATE NOT NULL,
 			created_at          DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
 			updated_at          DATETIME DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
 			created_by_user_id  BIGINT(20) UNSIGNED NOT NULL,
 			PRIMARY KEY  (id),
 			KEY referred_by_user_id (referred_by_user_id),
+			KEY data_source (data_source),
 			KEY entry_date (entry_date)
 		) $charset;";
 
@@ -153,12 +157,14 @@ class IST_Activator {
 			connected_with_user_id BIGINT(20) UNSIGNED DEFAULT NULL,
 			meet_where             VARCHAR(50) NOT NULL DEFAULT '',
 			note                   TEXT,
+			data_source            VARCHAR(20) NOT NULL DEFAULT 'native',
 			entry_date             DATE NOT NULL,
 			created_at             DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
 			updated_at             DATETIME DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
 			created_by_user_id     BIGINT(20) UNSIGNED NOT NULL,
 			PRIMARY KEY  (id),
 			KEY member_user_id (member_user_id),
+			KEY data_source (data_source),
 			KEY entry_date (entry_date)
 		) $charset;";
 

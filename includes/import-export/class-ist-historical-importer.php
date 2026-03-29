@@ -157,6 +157,92 @@ class IST_Historical_Importer {
 		delete_option( self::HASHES_OPTION );
 	}
 
+	/**
+	 * Count rows across all three tables where data_source = 'native'.
+	 *
+	 * A non-zero result on a dev/staging install typically means rows were
+	 * imported before version 0.2.26 added the data_source column, so they
+	 * received the column's DEFAULT value ('native') rather than 'import'.
+	 *
+	 * @return int Total row count across tyfcb + referrals + connects.
+	 */
+	public function get_legacy_native_count(): int {
+		global $wpdb;
+
+		$total = 0;
+		foreach ( array( 'tyfcb', 'referrals', 'connects' ) as $table ) {
+			$table_name = $wpdb->prefix . 'ist_' . $table;
+			$total += (int) $wpdb->get_var(
+				$wpdb->prepare( "SELECT COUNT(*) FROM {$table_name} WHERE data_source = %s", 'native' )
+			);
+		}
+
+		return $total;
+	}
+
+	/**
+	 * Re-tag all data_source='native' rows as data_source='import'.
+	 *
+	 * FOR PRE-0.2.26 DEV / STAGING MIGRATION ONLY.
+	 *
+	 * When the data_source column was added in 0.2.26, existing rows received
+	 * the DEFAULT value 'native' regardless of how they were inserted. On an
+	 * install where ALL existing rows are historical imports (no live member
+	 * submissions have been made), this method corrects that by flipping every
+	 * 'native' row to 'import', making the source-aware purge workflow usable.
+	 *
+	 * Do not run this on a live installation that already has genuine native
+	 * member submissions — it will incorrectly re-tag them.
+	 *
+	 * @return array{ tyfcb: int, referrals: int, connects: int }
+	 *         Row counts updated in each table.
+	 */
+	public function mark_legacy_as_imported(): array {
+		global $wpdb;
+
+		$counts = array();
+		foreach ( array( 'tyfcb', 'referrals', 'connects' ) as $table ) {
+			$table_name = $wpdb->prefix . 'ist_' . $table;
+			$wpdb->update(
+				$table_name,
+				array( 'data_source' => 'import' ),
+				array( 'data_source' => 'native' ),
+				array( '%s' ),
+				array( '%s' )
+			);
+			$counts[ $table ] = (int) $wpdb->rows_affected;
+		}
+
+		return $counts;
+	}
+
+	/**
+	 * Delete all rows flagged as imported data and clear the hash store.
+	 *
+	 * Only touches rows where data_source = 'import'. Native plugin submissions
+	 * (data_source = 'native' or any other value) are never affected.
+	 *
+	 * Also calls reset_hashes() so the importer can be re-run cleanly afterward.
+	 *
+	 * @return array{ tyfcb: int, referrals: int, connects: int }
+	 *         Row counts deleted from each table.
+	 */
+	public function purge_imported(): array {
+		global $wpdb;
+
+		$counts = array();
+
+		foreach ( array( 'tyfcb', 'referrals', 'connects' ) as $table ) {
+			$table_name = $wpdb->prefix . 'ist_' . $table;
+			$wpdb->delete( $table_name, array( 'data_source' => 'import' ), array( '%s' ) );
+			$counts[ $table ] = (int) $wpdb->rows_affected;
+		}
+
+		$this->reset_hashes();
+
+		return $counts;
+	}
+
 	// -------------------------------------------------------------------------
 	// Per-table importers
 	// -------------------------------------------------------------------------
@@ -258,6 +344,7 @@ class IST_Historical_Importer {
 				'business_type'        => $business_type,
 				'referral_type'        => $referral_type,
 				'note'                 => $note,
+				'data_source'          => 'import',
 				'entry_date'           => $entry_date,
 				'created_by_user_id'   => $submitted_by_user_id ?: $this->admin_user_id,
 			);
@@ -381,6 +468,7 @@ class IST_Historical_Importer {
 				'referral_type'       => $referral_type,
 				'status'              => $status,
 				'note'                => $note,
+				'data_source'         => 'import',
 				'entry_date'          => $entry_date,
 				'created_by_user_id'  => $referred_by_user_id ?: $this->admin_user_id,
 			);
@@ -494,6 +582,7 @@ class IST_Historical_Importer {
 				'connected_with_name' => $cw_name,
 				'meet_where'          => $meet_where,
 				'note'                => $note,
+				'data_source'         => 'import',
 				'entry_date'          => $entry_date,
 				'created_by_user_id'  => $member_user_id ?: $this->admin_user_id,
 			);
