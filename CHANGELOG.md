@@ -6,6 +6,20 @@ Versions follow [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [0.2.28] — 2026-03-29
+
+### Fixed — Custom capabilities not granted on activation
+
+**Root cause:** `IST_Capabilities::add_caps()` was never called from `IST_Activator::activate()`, despite the docblock in `class-ist-capabilities.php` stating "Custom caps are granted/removed on activation/deactivation via IST_Activator." On a fresh WordPress installation, the administrator role would not have any `ist_*` capabilities, causing every capability-guarded admin page (dashboard, reports, TYFCB/referrals/connects management, import) to deny access immediately after activation.
+
+The issue did not surface in dev because the developer's admin account had capabilities already stored in the role from prior development cycles.
+
+**Fix in `class-ist-activator.php`:** Added `IST_Capabilities::add_caps()` call to `activate()`.
+
+**Fix in `class-ist-deactivator.php`:** Added `IST_Capabilities::remove_caps()` call to `deactivate()` — caps are now cleaned up on plugin deactivation as originally intended.
+
+---
+
 ## [0.2.27] — 2026-03-29
 
 ### Added — Pre-0.2.26 legacy row migration utility
@@ -30,6 +44,14 @@ Versions follow [Semantic Versioning](https://semver.org/).
 - Section uses a secondary (non-delete) button style to distinguish it visually from the destructive Purge action.
 
 **Lifecycle on dev:** Mark Legacy → rows flip to `'import'` → section disappears → Purge Imported Records works correctly → re-import cleanly.
+
+#### QA validated (dev environment — 2026-03-29)
+
+End-to-end workflow confirmed on dev after 0.2.26 + 0.2.27 deploy:
+
+- **Mark Legacy → Purge → Re-import cycle:** Pre-0.2.26 imported rows re-tagged via Mark Legacy utility; Purge Imported Records successfully deleted all imported rows; import re-ran cleanly with correct `data_source='import'` tagging on all newly inserted rows.
+- **Native submission safety:** Member form submissions made after tagging were unaffected by Purge — `data_source='native'` rows are not touched by the purge query.
+- **Re-import idempotency:** Re-running the import after purge produced the expected row counts with no duplicates (hash store is cleared as part of purge).
 
 ---
 

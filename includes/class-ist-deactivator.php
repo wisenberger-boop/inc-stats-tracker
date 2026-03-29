@@ -18,6 +18,7 @@ class IST_Deactivator {
 	 * Use uninstall.php for full data removal.
 	 */
 	public static function deactivate(): void {
+		IST_Capabilities::remove_caps();
 		flush_rewrite_rules();
 	}
 }

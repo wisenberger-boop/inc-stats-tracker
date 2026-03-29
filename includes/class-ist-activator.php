@@ -19,6 +19,7 @@ class IST_Activator {
 	public static function activate(): void {
 		self::create_tables();
 		self::set_defaults();
+		IST_Capabilities::add_caps();
 		flush_rewrite_rules();
 	}
 
