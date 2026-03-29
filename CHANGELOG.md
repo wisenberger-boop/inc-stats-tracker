@@ -6,6 +6,425 @@ Versions follow [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [0.2.25] — 2026-03-28
+
+### Fixed — Fieldset legend visual positioning across all three forms
+
+**Root cause:** HTML `<legend>` is always centered on the fieldset's top border by the browser — it cannot be repositioned with padding or margin alone. All prior attempts (padding-top on fieldset, margin-bottom on legend) moved the content but left the legend straddling the border, making the title appear embedded in the box edge rather than labeling it from above.
+
+#### Changes in `assets/css/ist-frontend.css`
+
+**`.ist-fieldset`**: added `position: relative` (positioning context for the absolute legend) and `margin-top: 46px` (creates space above the box for the legend to float into, plus breathing room between sections).
+
+**`.ist-fieldset legend`**: changed to `position: absolute; top: 0; left: 0; transform: translateY(-100%)` — legend's bottom edge aligns with the fieldset's top border, placing the legend fully above the gray box. Added `padding-bottom: 6px` for a visual gap between the legend text and the box edge. The fieldset border now draws fully across the top (no browser notch). Applies consistently across Connects, Referrals, and Closed Business fieldsets.
+
+**`.ist-fieldset > legend + *`**: added `margin-top: 12px !important` — adds internal spacing between the legend area and the first radio/input row inside the box.
+
+---
+
+## [0.2.24] — 2026-03-28
+
+### Fixed — Form content containment across all three forms
+
+#### Root causes
+
+Three independent issues combined to make form content appear to extend past its background panel:
+
+**1. Width mismatch between form-wrap and form**
+`.ist-form-wrap { max-width: 560px }` contained `.ist-form { max-width: 520px }` — a 40px discrepancy. Elements outside `<form>` but inside the wrapper (notices: green/red banners) rendered at 560px, while all form fields rendered at 520px. Against any background that spanned the form-wrap width, the form fields appeared narrower than the container.
+
+**2. No card treatment on form-wrap**
+`.ist-form-wrap` had no `background`, `padding`, or `border-radius`. On standalone form pages (direct URL navigation, not modal), the form relied on BuddyBoss's page layout card for visual containment — but the BuddyBoss card's width/padding didn't align with the form's own element widths, making content appear to escape the intended box.
+
+**3. Fieldset browser-default `min-width: min-content`**
+HTML `<fieldset>` elements have a browser-default of `min-width: min-content` — they don't shrink below their content's intrinsic width. Without `min-width: 0`, any fieldset containing a long legend, radio label, or wide radio group could overflow its parent container on narrow screens or in the modal, visibly escaping the white panel.
+
+#### Changes in `assets/css/ist-frontend.css`
+
+**`.ist-form-wrap`**: now the definitive card container for standalone context. Added `background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 24px`. All form content (notices, submitter line, fieldsets, inputs, submit button) sits inside this card.
+
+**`.ist-modal__body .ist-form-wrap`**: overrides card styling to `background: transparent; border: none; border-radius: 0; padding: 0` — the modal panel already provides the card treatment; form-wrap inside the modal is transparent. Removed the now-superseded duplicate rule that previously only set `max-width: 100%`.
+
+**`.ist-form { max-width: 100% }`**: removed the 520px constraint. Form now fills its container (either the 24px-padded card or the modal body) at consistent width. Notices and form fields are now the same width.
+
+**`.ist-fieldset`**: added `min-width: 0; width: 100%; box-sizing: border-box` — overrides the browser default `min-width: min-content` that caused fieldsets to overflow their container on narrow viewports or in the modal. `box-sizing: border-box` ensures fieldset padding is included in the declared width.
+
+#### Why earlier modal passes didn't fully solve this
+
+0.2.22 fixed the modal close button (scrolled away) and 0.2.22/0.2.19 improved layout/font. But neither pass addressed the `.ist-form { max-width: 520px }` vs `.ist-form-wrap { max-width: 560px }` mismatch, the absent card treatment on form-wrap for standalone pages, or the fieldset overflow risk. Those three were only visible once the modal structure was otherwise clean.
+
+---
+
+## [0.2.23] — 2026-03-28
+
+### Fixed — Section spacing parity: My Stats now matches Group Stats
+
+#### Root cause
+
+The spacing improvements in 0.2.22 used `.ist-leaderboard h3` selectors, which only target the leaderboard partial used on **Group Stats**. My Stats uses `tmpl-recent-records.php`, whose stacked sections render under `.ist-recent-records h3` — a separate CSS block that was not updated. My Stats therefore kept the old pattern: `margin-top: 32px` on h3 with no `border-top` rule and `margin-bottom: 0` on tables.
+
+#### Changes in `assets/css/ist-frontend.css`
+
+**My Stats — `.ist-recent-records` block (parity fix):**
+- `.ist-recent-records h3`: changed to `margin: 0; padding: 28px 0 8px; border-top: 1px solid #e2e8f0` — matches the leaderboard section-break pattern exactly
+- `.ist-recent-records h3:first-child`: overrides to `padding-top: 0; border-top: none` — no rule above the first heading since the surrounding `margin-top: 32px` on the wrapper already provides separation
+- `.ist-recent-records .ist-table`: `margin-bottom` changed from `0` → `24px`
+
+**Group Stats — `.ist-leaderboard` block (spacing increase):**
+- `.ist-leaderboard h3`: `padding-top` bumped from `22px` → `28px`
+- `.ist-leaderboard .ist-table`: `margin-bottom` bumped from `20px` → `24px`
+
+Both pages now use the same rhythm: 24px below each table → border-top rule → 28px above heading text.
+
+---
+
+## [0.2.22] — 2026-03-28
+
+### Fixed — Section spacing, group stats label, modal close-button containment
+
+#### 1. Leaderboard section spacing
+
+**Root cause:** `.ist-leaderboard .ist-table` had `margin-bottom: 0`, so the only gap between a table's last row and the next section header was the h3's `margin-top: 36px`. No visual rule above the non-first h3s meant the space looked like loose whitespace rather than a deliberate section break.
+
+**Fix in `assets/css/ist-frontend.css`:**
+- `.ist-leaderboard h3` now uses `border-top: 1px solid #e2e8f0` and `padding-top: 22px` instead of `margin-top: 36px`. This gives each non-first section header a clear top rule with breathing room, matching the `.ist-section-divider` treatment used elsewhere.
+- `.ist-leaderboard h3:first-child` resets `padding-top: 0; border-top: none` — the section divider above already provides separation.
+- `.ist-leaderboard .ist-table` `margin-bottom` changed from `0` to `20px` — provides a gap between the table's last row and the section rule above the next header.
+
+#### 2. "Referrals You Gave" label on Group Stats
+
+**Root cause:** `tmpl-group-stats-reports.php` passed `'Referrals You Gave'` to the KPI row partial — a personal-voice label correct for My Stats but wrong in a group/global reporting context. Every other referral label on the Group Stats page already uses "Referrals Given" (leaderboard column, YTD comparison card, chart dataset label).
+
+**Fix in `templates/frontend/tmpl-group-stats-reports.php`:** Changed the KPI row label from `'Referrals You Gave'` to `'Referrals Given'` (line 94). `tmpl-profile-my-stats.php` continues to use `'Referrals You Gave'` unchanged.
+
+#### 3. Closed Business modal close-button containment
+
+**Root cause:** `.ist-modal__panel` had `overflow-y: auto` and `.ist-modal__close` was `position: absolute; top: 12px; right: 14px`. Because `position: absolute` is positioned relative to the scrollable container's padding edge (not the visible viewport edge), the close button scrolled away as the TYFCB form content scrolled down. Additionally, `top: 12px` placed the button inside the 32px top padding zone — visually detached from the form content start line.
+
+**Fix in `assets/css/ist-frontend.css`:**
+- `.ist-modal__panel` converted to `display: flex; flex-direction: column; overflow: hidden`. Panel no longer scrolls.
+- `.ist-modal__close` changed to `position: static; align-self: flex-end; margin: 10px 12px 0` — the button is now a natural flex item in the column header area, always visible regardless of scroll position.
+- `.ist-modal__body` added: `flex: 1; min-height: 0; overflow-y: auto; padding: 12px 32px 32px` — only the form body scrolls independently.
+
+---
+
+## [0.2.21] — 2026-03-28
+
+### Fixed — Referrals & Connects bar chart missing early FY months
+
+#### Root cause
+
+The `ref-con-comparison` bar chart appeared to have missing data for earlier fiscal year months (e.g., Jul–Nov 2025) because Chart.js renders 0-value bars with a height of exactly 0 — producing invisible bars. The x-axis labels for those months were present, but no bar was drawn.
+
+By contrast, the `business-trend` line chart is not affected: a line always passes through y=0 for those months and remains visually present even when the value is 0.
+
+The PHP data pipeline is correct:
+- `fy_monthly_trend()` always emits one bucket per elapsed FY month, with `ref_count` and `con_count` as explicit integers (including 0) for every month
+- The template builds both charts from the same `$fy_monthly_data` array with identical `array_column()` calls — both charts have the same number of labels and data points
+- There is no key mismatch, sparse merge bug, or label/dataset length mismatch
+
+#### Fix
+
+Added `minBarLength: 2` to both datasets in the `ref-con-comparison` chart config in `buildChartConfig()`. This ensures every month renders at least a 2px stub bar even when the count is 0, making the full FY month sequence visually present. Tooltips continue to show the correct count (0 or actual).
+
+Affects both My Stats and Group Stats pages, which both use the `ref-con-comparison` chart type.
+
+The timezone fix in `fy_monthly_trend()` (`DateTime::modify('last day of this month')`) is unchanged.
+
+---
+
+## [0.2.20] — 2026-03-27
+
+### Fixed — Help popup overflow, leaderboard spacing, encoding corruption, icon toggle
+
+#### 1. Help popup overflow and close button layout
+
+- `.ist-help-popup` gains `max-height: 320px; display: flex; flex-direction: column; overflow: hidden` — popup container no longer grows unbounded.
+- `.ist-help-popup__body` gains `flex: 1; min-height: 0; overflow-y: auto` — body scrolls internally when content is long; close button stays fixed in the header.
+
+#### 2. Help popup viewport clamping
+
+`openHelp()` in `initFieldHelp()` now clamps the popup to the visible viewport: if placing the popup below the button would exceed `window.innerHeight - 8`, the popup flips above the button instead (`rect.top - maxPopupHeight - 8`, clamped to a minimum of 8px from the top edge).
+
+#### 3. Help icon toggle behavior
+
+`initFieldHelp()` now tracks the active button with a `$activeBtn` variable. Clicking the same icon that opened the popup closes it (toggle). Behavior matrix:
+- First click on icon → open popup, set `$activeBtn`
+- Second click on same icon → close popup, clear `$activeBtn`
+- Click X / Escape / outside → close popup, clear `$activeBtn`
+- Click different icon while open → close old, open new
+
+#### 4. Encoding corruption fixed in group stats headings
+
+Three headings in `tmpl-group-stats-reports.php` had a double-encoded em dash (`â` rendering as `â`) caused by a UTF-8 encoding error. Fixed by replacing the corrupted byte sequence (`\xc3\xa2\xc2\x80\xc2\x94`) with the correct UTF-8 em dash (`\xe2\x80\x94` → `—`) in all three instances:
+- "Fiscal Year by Month — {FY}"
+- "Group Closed Business by Month — {FY}"
+- "Group Referrals & Connects by Month — {FY}"
+
+#### 5. Leaderboard section divider
+
+Added an `ist-section-divider` heading before the leaderboard charts in `tmpl-group-stats-reports.php`: **"Leaderboards — {FY label}"**. Provides clear visual separation from the attribution reporting section above and matching heading treatment to the "Fiscal Year by Month" divider.
+
+---
+
+## [0.2.19] — 2026-03-27
+
+### Fixed — Help icon styling, form layout, Member/Other defaults, typography
+
+#### 1. Help icon redesign — matches INC Meeting Roles Scheduler pattern
+
+The help icon trigger (`.ist-help-icon`) has been redesigned to match the icon style used in the INC Meeting Roles Scheduler plugin (`.inc-mrs-role-instructions-btn`).
+
+**Before:** 16×16px bordered circle button with `?` text, gray border and gray fill.
+**After:** 18×18px icon-only button (2px padding) with an inline SVG info-circle (`ℹ`) — no border, no background, muted gray (`#9ca3af`) at rest, INC blue (`#1e4e8c`) on hover/focus.
+
+SVG icon: `viewBox="0 0 16 16"` circle outline + dot + bar — the same SVG used in Meeting Roles. The button renders as a pure icon with `font-size: 0; line-height: 0` suppressing any text-rendering side effects.
+
+BuddyBoss/theme override guard added: `#buddypress .ist-help-icon, .bp-nouveau .ist-help-icon, .buddypress .ist-help-icon` force-resets width/height/padding/border/box-shadow to prevent platform button resets from adding unwanted borders or sizing.
+
+`:focus-visible` ring added for keyboard accessibility (2px `#1e4e8c` outline). Suppressed for mouse focus with `:focus:not(:focus-visible)`.
+
+All three form templates (`tmpl-form-referral.php`, `tmpl-form-connect.php`, `tmpl-form-tyfcb.php`) updated: the `>?</button>` content replaced with the inline SVG on all help icon buttons.
+
+#### 2. Form layout / legend and label alignment
+
+**Legend fix:** `.ist-fieldset legend` now uses `display: flex; align-items: center; gap: 6px`. This aligns the legend text and icon as a proper flex row, eliminating the visual overlap and "bolted-on" appearance caused by inline flow. The `padding: 0 6px` notch behavior is preserved.
+
+**Label fix:** Added `.ist-form p > label { display: flex; align-items: center; gap: 6px; }` — targets only standard field labels (direct children of `<p>` elements), not radio option labels. Aligns label text and help icon on the same baseline without affecting `.ist-radio-label` (which already uses `display: inline-flex`).
+
+**Note:** The `gap` property on flex containers replaces the previous `margin-left: 5px` on the icon, giving consistent spacing whether the icon is the only element to the right of text or after an optional-label span.
+
+#### 3. Member / Other default selection
+
+**Referral form** (`tmpl-form-referral.php`): Group Member radio now has `checked` attribute (was Other). The Group Member panel now has `ist-visible` class (was hidden with `aria-hidden="true"`). The Other panel now starts hidden (`aria-hidden="true"`, no `ist-visible`). The member select no longer has `disabled` (JS re-enables it on DOMReady via `initRecipientToggle` trigger).
+
+**Connect form** (`tmpl-form-connect.php`): Same changes — Group Member checked by default, member panel visible, other panel hidden.
+
+The JS `initRecipientToggle` triggers `change` on the checked radio on DOMReady, so both HTML state and JS state are now consistent.
+
+#### 4. Typography — sans-serif throughout
+
+Added explicit `font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif` to:
+- `.ist-form-wrap` — form container root, ensures cascade in all contexts including modal
+- `.ist-fieldset legend` — `<legend>` elements do not reliably inherit font from BuddyBoss-controlled ancestors
+- `.ist-form label` — prevents theme serif overrides on labels
+- `.ist-radio-label` — radio/checkbox option labels
+- `.ist-btn` — submit buttons
+
+Added `font-family: inherit` to `.ist-form input[type="text"], input[type="number"], input[type="date"], select, textarea` — browser default behavior for form controls is to NOT inherit font-family; `inherit` picks up the sans-serif cascade from `.ist-form-wrap`.
+
+**Files changed:** `inc-stats-tracker.php`, `assets/css/ist-frontend.css`, `templates/frontend/tmpl-form-referral.php`, `templates/frontend/tmpl-form-connect.php`, `templates/frontend/tmpl-form-tyfcb.php`.
+
+---
+
+## [0.2.18] — 2026-03-27
+
+### Added — Phase 6 follow-up: Referral Origin table + terminology alignment
+
+#### Referral Origin summary table (`tmpl-tyfcb-attribution.php`)
+
+Added a compact summary table as the third enhanced-only attribution view, after the two existing horizontal bar charts. Sourced from `IST_Stats_Query::tyfcb_by_referrer_type()` — enhanced records only, referral-attributed only (`original_referrer_type != ''`). Shows three possible rows: Current Member / Former Member / Other. Amount and Records columns are right-aligned. Empty-state: section is hidden via `! empty( $attr_referrer )` guard — no output if no referral-attributed enhanced records exist. A `ist-chart-note` below the table clarifies the scope ("Covers referral-attributed enhanced records only").
+
+Uses the existing `.ist-table` styles — no new CSS classes required.
+
+#### Controller changes
+
+`IST_Profile_Nav::content()` and `IST_Group_Extension::display()` each add `tyfcb_by_referrer_type()` to their attribution query set. Result passed as `$tyfcb_by_referrer` / `attr_referrer`.
+
+#### Terminology alignment
+
+- Partial docblock Tier 1 bucket list corrected: "Direct / Non-Referral / Unclassified" (was "Direct / Unclassified" — missed the full chip label).
+- Partial docblock Tier 2 updated to document all three views (Attribution Source chart, Revenue Relationship Type chart, Referral Origin table).
+- Enhanced intro paragraph updated: "The **breakdowns** below..." (was "The **charts** below..." — now accurate since a table is also present).
+- `translators` comment on enhanced intro updated to match actual printf arguments.
+
+**Files changed:** `inc-stats-tracker.php`, `frontend/class-ist-profile-nav.php`, `frontend/class-ist-group-extension.php`, `templates/frontend/tmpl-profile-my-stats.php`, `templates/frontend/tmpl-group-stats-reports.php`, `templates/frontend/partials/tmpl-tyfcb-attribution.php`.
+
+---
+
+## [0.2.17] — 2026-03-27
+
+### Added — Phase 6: Closed Business attribution reporting views
+
+Attribution reporting is now visible on both the My Stats profile tab and the Group Stats Reports group tab, scoped to the current fiscal year.
+
+#### New partial template: `templates/frontend/partials/tmpl-tyfcb-attribution.php`
+
+Shared partial rendered on both dashboard pages. Receives `$rollup_data`, `$coverage_data`, `$attr_source`, `$attr_rel_type`, and `$fy_label` from the parent template via `ist_get_template`. Returns early (no output) if no TYFCB records exist in the FY scope.
+
+**Tier 1 — Cross-era rollup (all records):**
+Three rollup chips showing Referral-Attributed / Direct Non-Referral / Unclassified amounts and record counts. Uses `tyfcb_attribution_rollup()` data. Safe to show regardless of data vintage; works on legacy-only groups.
+
+**Attribution coverage note:**
+Disclosure text above the chips adapts to data state: all-legacy, mixed, or all-enhanced, with exact record counts.
+
+**Tier 2 — Enhanced-only attribution charts (gated on `enhanced.count > 0`):**
+- Revenue Attribution Source horizontal bar chart — 5 attribution source buckets by amount.
+- Revenue Relationship Type horizontal bar chart — 5 relationship type buckets by amount.
+Both charts are labeled "Enhanced Only" and reference the fiscal year. Chart height scales with row count (`max(120, count * 44 + 48)px`).
+
+#### New JS chart type: `attribution-horizontal`
+
+Added to `buildChartConfig()` in `ist-frontend.js`. Horizontal bar chart with currency-formatted x-axis (same `$` / `k` shorthand as business-trend) and currency tooltip. Distinct from `leaderboard-horizontal` which uses integer counts.
+
+#### New CSS classes
+
+`.ist-rollup-chips` — flex row of chips, wraps on narrow viewports.
+`.ist-rollup-chip` — base chip style (card with top border accent).
+`.ist-rollup-chip--referral` — INC blue top border (`#1e4e8c`).
+`.ist-rollup-chip--non-referral` — light blue top border (`#6b9fd4`).
+`.ist-rollup-chip--unknown` — neutral grey top border (`#d1d5db`).
+`.ist-rollup-chip__label`, `.ist-rollup-chip__amount`, `.ist-rollup-chip__count` — chip inner elements.
+`.ist-coverage-note` — muted disclosure paragraph.
+`.ist-enhanced-badge` — inline blue pill label for enhanced-only sections.
+`.ist-enhanced-intro` — intro sentence preceding enhanced charts.
+
+#### Controller changes
+
+`IST_Profile_Nav::content()` and `IST_Group_Extension::display()` each call four new queries scoped to `$fy_start`/`$fy_end` and the relevant `$user_ids` scope (single user vs all group members):
+- `IST_Stats_Query::tyfcb_attribution_rollup()`
+- `IST_Stats_Query::tyfcb_model_coverage()`
+- `IST_Stats_Query::tyfcb_by_attribution_source()`
+- `IST_Stats_Query::tyfcb_by_relationship_type()`
+
+Results passed to the respective dashboard templates as `$tyfcb_rollup`, `$tyfcb_coverage`, `$tyfcb_by_source`, `$tyfcb_by_rel`.
+
+**Files changed:** `inc-stats-tracker.php`, `frontend/class-ist-profile-nav.php`, `frontend/class-ist-group-extension.php`, `templates/frontend/tmpl-profile-my-stats.php`, `templates/frontend/tmpl-group-stats-reports.php`, `templates/frontend/partials/tmpl-tyfcb-attribution.php` (new), `assets/js/ist-frontend.js`, `assets/css/ist-frontend.css`.
+
+---
+
+## [0.2.16] — 2026-03-27
+
+### Added — Phase 5: reporting compatibility layer + name normalization
+
+#### Name normalization (IST_Service_TYFCB)
+
+Added `normalize_name()` private static helper. Applied at insert time to all free-text person name fields so GROUP-BY attribution queries are not fragmented by whitespace variants.
+
+Rules:
+- Trim leading/trailing whitespace.
+- Normalize tabs, newlines, carriage returns, and vertical tabs to a single space.
+- Collapse any run of Unicode whitespace (including `\u00A0`) to one ASCII space.
+- Capitalization and punctuation preserved exactly as entered — no ucwords() or aggressive rewriting. Cultural and edge-case names (O'Brien, van der Berg, ALLCAPS initials) are left intact.
+
+Applied to: `original_referrer_name` (enhanced `former_member` / `other` paths), `thank_you_to_name` (legacy `other` path). NOT applied to `client_payer_name` or `attribution_notes` (freeform, not used in GROUP-BY queries).
+
+#### Phase 5 query methods (IST_Stats_Query)
+
+All existing universal methods (`tyfcb_totals`, `tyfcb_leaderboard`, `three_month_trend`, `fy_monthly_trend`, `ytd_comparison`, `tyfcb_recent`) continue to work across legacy and enhanced records unchanged — they query `entry_date`, `amount`, and `thank_you_to_name`, which are populated for all records.
+
+New methods added:
+
+**`tyfcb_attribution_rollup( $date_start, $date_end, $user_ids )`**
+Cross-era rollup over ALL records (legacy + enhanced). Returns three buckets: `referral_attributed`, `non_referral`, `unknown_legacy_unclassified`. All buckets are always returned (zero-filled if empty).
+
+Mapping rules:
+- Enhanced: `current_member_referral` / `former_member_referral` / `third_party_extended_referral` → `referral_attributed`; `direct_non_referral` → `non_referral`; `unknown_other` → `unknown_legacy_unclassified`
+- Legacy: `inside` / `tier-3` → `referral_attributed`; `outside` → `unknown_legacy_unclassified` (**not** `non_referral` — legacy "outside" could represent a former member referral, indirect downstream revenue, or recurring business from an old referral; insufficient fidelity for a non-referral classification); `''` → `unknown_legacy_unclassified`
+- Principle: `non_referral` is only assigned to enhanced records with explicit `direct_non_referral` source. Legacy records cannot claim non-referral status.
+
+**`tyfcb_by_attribution_source( $date_start, $date_end, $user_ids )`**
+Enhanced records only. Groups by `revenue_attribution_source`. Returns `{ source, amount, count }` rows ordered by amount DESC.
+
+**`tyfcb_by_relationship_type( $date_start, $date_end, $user_ids )`**
+Enhanced records only. Groups by `revenue_relationship_type`. Returns `{ relationship_type, amount, count }` rows ordered by amount DESC.
+
+**`tyfcb_by_referrer_type( $date_start, $date_end, $user_ids )`**
+Enhanced records only, referral-attributed records only (`original_referrer_type != ''`). Groups by `original_referrer_type` (`current_member`, `former_member`, `other`). Returns `{ referrer_type, amount, count }` rows ordered by amount DESC.
+
+**`tyfcb_by_lineage_type( $date_start, $date_end, $user_ids )`**
+Enhanced records only, restricted to referral-attributed attribution sources. Groups by `referral_lineage_type`. Records where the submitter left lineage blank (`''`) are included as a distinct "not specified" bucket — they represent valid referral-attributed business with no lineage characterisation. Returns `{ lineage_type, amount, count }` rows ordered by amount DESC.
+
+**`tyfcb_model_coverage( $date_start, $date_end, $user_ids )`**
+Returns `{ enhanced: { amount, count }, legacy: { amount, count } }`. Tells the dashboard how many FY records carry enhanced vs legacy attribution — used to show data-coverage context ("X of Y records include enhanced attribution data").
+
+**Files changed:** `inc-stats-tracker.php`, `includes/services/class-ist-service-tyfcb.php`, `includes/class-ist-stats-query.php`.
+
+---
+
+## [0.2.15] — 2026-03-27
+
+### Fixed — Former member attribution in Closed Business form
+
+**Problem:** The Original Referrer section in the enhanced TYFCB form offered only "Group Member" (current active members dropdown) or "Other Person" (free text). Former members — people who were once in the group but are no longer active — had no distinct path and were incorrectly forced into the "Other Person" bucket, losing attribution context.
+
+**Root cause:** `IST_Service_Members::get_group_members()` returns only current BuddyBoss group members. There is no former-member roster in the plugin. The original 2-option toggle did not account for the gap between "current member I can look up" and "genuinely outside the group."
+
+**Fix — schema (additive):**
+- Added `original_referrer_type VARCHAR(20) NOT NULL DEFAULT ''` to `wp_ist_tyfcb`.
+- Stores the three-way classification at insert time: `current_member`, `former_member`, `other`.
+- Legacy and non-referral records default to `''` (empty string).
+- `dbDelta()` adds the column on next admin load after version bump.
+
+**Fix — service:**
+- `IST_Service_TYFCB` now accepts `original_referrer_type` values `current_member`, `former_member`, `other`.
+- Added `VALID_REFERRER_TYPES` constant.
+- Legacy import value `'member'` is normalised to `'current_member'` at service time — no import changes needed.
+- `former_member` path: requires `original_referrer_name` (free text); `original_referrer_user_id` stays NULL; `thank_you_to_type = 'other'` for leaderboard compat.
+- `other` path: same storage logic as `former_member`, distinct error message.
+- `original_referrer_type` is now included in the INSERT data.
+
+**Fix — form:**
+- Original Referrer radio expanded from 2 to 3 options: Current Group Member / Former Group Member / Other Person / Non-Member.
+- Three corresponding panels: member dropdown (current), free-text "Former Member Name", free-text "Their Name or Contact".
+- Both former-member and other panels share `name="original_referrer_name"`; only the active panel's input is enabled at submit time.
+
+**Fix — JS smart defaulting:**
+- `initTyfcbAttributionToggle()` now auto-selects the natural referrer type when the attribution source changes:
+  - `current_member_referral` → auto-selects "Current Group Member"
+  - `former_member_referral` → auto-selects "Former Group Member"
+  - `third_party_extended_referral` → auto-selects "Other Person / Non-Member"
+- This prevents the user from having to make an obvious redundant choice after selecting the attribution source.
+
+**Files changed:** `inc-stats-tracker.php`, `includes/class-ist-activator.php`, `includes/services/class-ist-service-tyfcb.php`, `templates/frontend/tmpl-form-tyfcb.php`, `assets/js/ist-frontend.js`.
+
+---
+
+### Added — Help/info icons on Referral and Connect forms
+
+Extended the `initFieldHelp()` popup system (introduced in 0.2.14) to the Referral and Connect forms.
+
+**Referral form** — help icons added to: Referred To, Referral Date, Handoff Method, Referral Type, Referral Details.
+
+**Connect form** — help icons added to: Met With, Date of Connect, How Did You Meet?, Topic of Conversation.
+
+**Files changed:** `templates/frontend/tmpl-form-referral.php`, `templates/frontend/tmpl-form-connect.php`.
+
+---
+
+## [0.2.14] — 2026-03-26
+
+### Added — Enhanced Closed Business attribution model (Phases 2–4)
+
+**Schema (Phase 2 — additive, backward-safe)**
+- Added 8 new columns to `wp_ist_tyfcb`: `attribution_model` (DEFAULT `'legacy'`), `revenue_attribution_source`, `revenue_relationship_type`, `client_payer_name`, `original_referrer_name`, `original_referrer_user_id`, `referral_lineage_type`, `attribution_notes`.
+- `dbDelta()` migration: existing records automatically receive `attribution_model = 'legacy'` via the column DEFAULT. No data is modified. Migration runs on first admin load after version bump.
+- Added `KEY attribution_model` index for future reporting filters.
+
+**Service layer (Phase 2)**
+- `IST_Service_TYFCB::create_from_input()` now branches on `attribution_model` in POST input.
+- **Enhanced path** (`attribution_model = 'enhanced'`): validates `revenue_attribution_source` (required), validates `original_referrer_*` fields (required when source is a referral type), validates `revenue_relationship_type` (required), accepts optional `referral_lineage_type`, `client_payer_name`, `attribution_notes`. Derives legacy `thank_you_to_*` from `original_referrer_*` for leaderboard / reporting compatibility. Auto-maps `referral_type` slug from attribution source via `ATTRIBUTION_SOURCE_TO_REFERRAL_TYPE` constant.
+- **Legacy path** (`attribution_model = 'legacy'`): existing behavior preserved exactly — no changes to validation, field names, or insert logic.
+
+**Closed Business form rewrite (Phase 3)**
+- `templates/frontend/tmpl-form-tyfcb.php` fully rewritten for the enhanced attribution model. All new submissions carry `attribution_model = 'enhanced'`.
+- New fields: Revenue Attribution Source (5-option radio, required), Original Referrer (member/other toggle, conditional on referral-type source), Referral Lineage Type (conditional, optional), Revenue Relationship Type (5-option radio, required), Client/Payer Name (optional text).
+- Preserved fields: Business Type, Amount, Business Date, General Note.
+- Removed legacy fields from the public form: Business Source member/other toggle, old Referral Type radio. These remain fully functional in the service layer for legacy/import paths.
+- Referrer details section (`#ist-tyfcb-referrer-details`) is hidden by default and shown only when a referral-type attribution source is selected. Inputs in the hidden section are `disabled` to prevent ghost submission.
+
+**Field help icon system (Phase 4)**
+- New `.ist-help-icon` button pattern: small inline `?` button inside fieldset legends and labels, carrying `data-help-title` and `data-help-body` (paragraphs separated by `||`).
+- `initFieldHelp()` in `assets/js/ist-frontend.js`: creates a single `#ist-field-help` popup appended to `document.body` on init (outside all modal stacks), event delegation on `document` for `.ist-help-icon` clicks, fixed positioning near the clicked button, ESC / outside-click / close-button dismissal.
+- `initTyfcbAttributionToggle()`: handles show/hide of the referrer details section based on `data-shows-referrer` attribute on attribution source radios.
+- `initTyfcbReferrerToggle()`: handles member/other panel toggle inside the referrer details section.
+- CSS additions: `.ist-conditional-section` (hidden by default, shown via `.ist-visible`), `.ist-help-icon`, `.ist-help-popup` with header/title/close/body sub-elements, `.ist-label-optional` / `.ist-legend-optional`, `.ist-radio-group--stacked` alias.
+- Help copy added to all fields in the new TYFCB form.
+
+**Files changed:** `inc-stats-tracker.php`, `includes/class-ist-activator.php`, `includes/services/class-ist-service-tyfcb.php`, `templates/frontend/tmpl-form-tyfcb.php`, `assets/js/ist-frontend.js`, `assets/css/ist-frontend.css`.
+
+---
+
 ## [0.2.13] — 2026-03-26
 
 ### Fixed — FY monthly chart: all prior-month buckets returning zero (timezone bug)

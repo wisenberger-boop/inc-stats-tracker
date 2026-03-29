@@ -17,6 +17,11 @@
  *   $fy_progress          array     From IST_Fiscal_Year::get_progress() — passed as-is to partial.
  *   $trend_data           array     3-month trend from IST_Stats_Query::three_month_trend().
  *                                   Each item: { label, tyfcb_amount, ref_count, con_count }
+ *   $tyfcb_rollup         array     From IST_Stats_Query::tyfcb_attribution_rollup() — FY scope.
+ *   $tyfcb_coverage       array     From IST_Stats_Query::tyfcb_model_coverage() — FY scope.
+ *   $tyfcb_by_source      array     From IST_Stats_Query::tyfcb_by_attribution_source() — FY scope.
+ *   $tyfcb_by_rel         array     From IST_Stats_Query::tyfcb_by_relationship_type() — FY scope.
+ *   $tyfcb_by_referrer    array     From IST_Stats_Query::tyfcb_by_referrer_type() — FY scope.
  *   $form_urls            array     { tyfcb, referral, connect } — used as link hrefs in the
  *                                   action row and as fallback direct-navigation targets.
  *   $group_members        object[]  Each object: { ID, display_name, user_email }
@@ -86,7 +91,7 @@ $atts        = $atts ?? array();
 			'month_label' => $month_label,
 		) );
 		ist_get_template( 'frontend/partials/tmpl-kpi-row.php', array(
-			'label'       => __( 'Referrals You Gave', 'inc-stats-tracker' ),
+			'label'       => __( 'Referrals Given', 'inc-stats-tracker' ),
 			'month_value' => $ref_month['count'],
 			'fy_value'    => $ref_fy['count'],
 			'format'      => 'count',
@@ -182,7 +187,7 @@ $atts        = $atts ?? array();
 			<?php
 			printf(
 				/* translators: %s: fiscal year label */
-				esc_html__( 'Fiscal Year by Month â %s', 'inc-stats-tracker' ),
+				esc_html__( 'Fiscal Year by Month — %s', 'inc-stats-tracker' ),
 				esc_html( $fy_label )
 			);
 			?>
@@ -207,7 +212,7 @@ $atts        = $atts ?? array();
 		<h3 class="ist-chart-title">
 			<?php
 			printf(
-				esc_html__( 'Group Closed Business by Month â %s', 'inc-stats-tracker' ),
+				esc_html__( 'Group Closed Business by Month — %s', 'inc-stats-tracker' ),
 				esc_html( $fy_label )
 			);
 			?>
@@ -223,7 +228,7 @@ $atts        = $atts ?? array();
 		<h3 class="ist-chart-title">
 			<?php
 			printf(
-				esc_html__( 'Group Referrals &amp; Connects by Month â %s', 'inc-stats-tracker' ),
+				esc_html__( 'Group Referrals &amp; Connects by Month — %s', 'inc-stats-tracker' ),
 				esc_html( $fy_label )
 			);
 			?>
@@ -240,10 +245,34 @@ $atts        = $atts ?? array();
 	<?php endif; ?>
 
 	<?php /* ----------------------------------------------------------------
+	   Closed Business Attribution
+	   --------------------------------------------------------------- */ ?>
+	<?php ist_get_template( 'frontend/partials/tmpl-tyfcb-attribution.php', array(
+		'rollup_data'   => $tyfcb_rollup,
+		'coverage_data' => $tyfcb_coverage,
+		'attr_source'   => $tyfcb_by_source,
+		'attr_rel_type' => $tyfcb_by_rel,
+		'attr_referrer' => $tyfcb_by_referrer,
+		'fy_label'      => $fy_label,
+	) ); ?>
+
+	<?php /* ----------------------------------------------------------------
 	   Leaderboard charts — Top Referral Givers + Top Connect Loggers
 	   Horizontal bar charts using the same data as the leaderboard tables.
 	   Only rendered when data exists; tables below remain as fallback.
 	   --------------------------------------------------------------- */ ?>
+	<div class="ist-section-divider">
+		<h3 class="ist-section-divider__label">
+			<?php
+			printf(
+				/* translators: %s: fiscal year label */
+				esc_html__( 'Leaderboards — %s', 'inc-stats-tracker' ),
+				esc_html( $fy_label )
+			);
+			?>
+		</h3>
+	</div>
+
 	<?php if ( $referral_leaderboard || $connect_leaderboard ) : ?>
 
 	<?php if ( $referral_leaderboard ) :

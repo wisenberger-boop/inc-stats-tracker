@@ -221,6 +221,15 @@ class IST_Profile_Nav {
 			$user_ids
 		);
 
+		// -----------------------------------------------------------------------
+		// Attribution reporting — FY scope, this user only.
+		// -----------------------------------------------------------------------
+		$tyfcb_rollup      = IST_Stats_Query::tyfcb_attribution_rollup( $fy_start, $fy_end, $user_ids );
+		$tyfcb_coverage    = IST_Stats_Query::tyfcb_model_coverage( $fy_start, $fy_end, $user_ids );
+		$tyfcb_by_source   = IST_Stats_Query::tyfcb_by_attribution_source( $fy_start, $fy_end, $user_ids );
+		$tyfcb_by_rel      = IST_Stats_Query::tyfcb_by_relationship_type( $fy_start, $fy_end, $user_ids );
+		$tyfcb_by_referrer = IST_Stats_Query::tyfcb_by_referrer_type( $fy_start, $fy_end, $user_ids );
+
 		$form_urls     = ist_get_form_urls();
 		$group_members = IST_Service_Members::get_group_members();
 		$current_user  = wp_get_current_user();
@@ -236,6 +245,7 @@ class IST_Profile_Nav {
 			'tyfcb_recent', 'referral_recent', 'connect_recent',
 			'trend_data',
 			'fy_monthly_data', 'ytd_data', 'prior_fy_label',
+			'tyfcb_rollup', 'tyfcb_coverage', 'tyfcb_by_source', 'tyfcb_by_rel', 'tyfcb_by_referrer',
 			'form_urls',
 			'group_members', 'current_user', 'my_stats_url'
 		) );

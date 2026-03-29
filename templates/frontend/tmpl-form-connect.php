@@ -72,25 +72,30 @@ $error = isset( $_GET['ist_error'] ) ? sanitize_text_field( wp_unslash( $_GET['i
 
 		<?php /* Connect party — group member or outside contact */ ?>
 		<fieldset class="ist-fieldset">
-			<legend><?php esc_html_e( 'Met With', 'inc-stats-tracker' ); ?></legend>
+			<legend>
+				<?php esc_html_e( 'Met With', 'inc-stats-tracker' ); ?>
+				<button type="button" class="ist-help-icon" aria-label="<?php esc_attr_e( 'Help: Met With', 'inc-stats-tracker' ); ?>"
+					data-help-title="<?php esc_attr_e( 'Met With', 'inc-stats-tracker' ); ?>"
+					data-help-body="<?php esc_attr_e( 'Who did you have this one-to-one connect with?||Group Member — choose this when you met with a current member of your group. Select them from the list so the connect is counted for both of you.||Other — choose this for connects with prospects, referral partners, clients, or anyone not currently on the group roster.', 'inc-stats-tracker' ); ?>"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="14" height="14" aria-hidden="true" focusable="false"><circle cx="8" cy="8" r="7" stroke="currentColor" stroke-width="1.5" fill="none"/><circle cx="8" cy="5.5" r="1" fill="currentColor"/><rect x="7.25" y="7.5" width="1.5" height="4" rx="0.75" fill="currentColor"/></svg></button>
+			</legend>
 
 			<div class="ist-radio-group">
 				<label class="ist-radio-label">
 					<input type="radio" name="connected_with_type" value="member"
-						class="ist-recipient-toggle" data-panel="ist-con-recipient-member">
+						class="ist-recipient-toggle" data-panel="ist-con-recipient-member" checked>
 					<?php esc_html_e( 'Group Member', 'inc-stats-tracker' ); ?>
 				</label>
 				<label class="ist-radio-label">
 					<input type="radio" name="connected_with_type" value="other"
-						class="ist-recipient-toggle" data-panel="ist-con-recipient-other" checked>
+						class="ist-recipient-toggle" data-panel="ist-con-recipient-other">
 					<?php esc_html_e( 'Other', 'inc-stats-tracker' ); ?>
 				</label>
 			</div>
 
 			<?php /* Panel: select a member from the group */ ?>
-			<div id="ist-con-recipient-member" class="ist-recipient-panel" aria-hidden="true">
+			<div id="ist-con-recipient-member" class="ist-recipient-panel ist-visible">
 				<label for="ist-con-with-member"><?php esc_html_e( 'Select Member', 'inc-stats-tracker' ); ?></label>
-				<select id="ist-con-with-member" name="connected_with_user_id" disabled>
+				<select id="ist-con-with-member" name="connected_with_user_id">
 					<option value=""><?php esc_html_e( '— Select Member —', 'inc-stats-tracker' ); ?></option>
 					<?php foreach ( $group_members as $member ) : ?>
 						<option value="<?php echo esc_attr( $member->ID ); ?>">
@@ -101,7 +106,7 @@ $error = isset( $_GET['ist_error'] ) ? sanitize_text_field( wp_unslash( $_GET['i
 			</div>
 
 			<?php /* Panel: free-text name for anyone outside the group */ ?>
-			<div id="ist-con-recipient-other" class="ist-recipient-panel ist-visible">
+			<div id="ist-con-recipient-other" class="ist-recipient-panel" aria-hidden="true">
 				<label for="ist-con-with-name"><?php esc_html_e( 'Name', 'inc-stats-tracker' ); ?></label>
 				<input type="text" id="ist-con-with-name" name="connected_with_name"
 					placeholder="<?php esc_attr_e( 'Name of person you connected with', 'inc-stats-tracker' ); ?>">
@@ -109,7 +114,12 @@ $error = isset( $_GET['ist_error'] ) ? sanitize_text_field( wp_unslash( $_GET['i
 		</fieldset>
 
 		<p>
-			<label for="ist-con-date"><?php esc_html_e( 'Date of Connect', 'inc-stats-tracker' ); ?></label>
+			<label for="ist-con-date">
+				<?php esc_html_e( 'Date of Connect', 'inc-stats-tracker' ); ?>
+				<button type="button" class="ist-help-icon" aria-label="<?php esc_attr_e( 'Help: Date of Connect', 'inc-stats-tracker' ); ?>"
+					data-help-title="<?php esc_attr_e( 'Date of Connect', 'inc-stats-tracker' ); ?>"
+					data-help-body="<?php esc_attr_e( 'The date you actually met or spoke. Use today\'s date if you\'re logging it right away. If you\'re catching up on a past connect, enter the actual date — this determines which reporting period the connect falls in.', 'inc-stats-tracker' ); ?>"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="14" height="14" aria-hidden="true" focusable="false"><circle cx="8" cy="8" r="7" stroke="currentColor" stroke-width="1.5" fill="none"/><circle cx="8" cy="5.5" r="1" fill="currentColor"/><rect x="7.25" y="7.5" width="1.5" height="4" rx="0.75" fill="currentColor"/></svg></button>
+			</label>
 			<input type="date" id="ist-con-date" name="entry_date"
 				value="<?php echo esc_attr( $today ); ?>"
 				max="<?php echo esc_attr( $today ); ?>"
@@ -118,7 +128,13 @@ $error = isset( $_GET['ist_error'] ) ? sanitize_text_field( wp_unslash( $_GET['i
 
 		<?php /* Meet where — the medium of the connection */ ?>
 		<fieldset class="ist-fieldset">
-			<legend><?php esc_html_e( 'How did you meet?', 'inc-stats-tracker' ); ?> <span aria-hidden="true">*</span></legend>
+			<legend>
+				<?php esc_html_e( 'How did you meet?', 'inc-stats-tracker' ); ?>
+				<span aria-hidden="true"> *</span>
+				<button type="button" class="ist-help-icon" aria-label="<?php esc_attr_e( 'Help: How did you meet?', 'inc-stats-tracker' ); ?>"
+					data-help-title="<?php esc_attr_e( 'How Did You Meet?', 'inc-stats-tracker' ); ?>"
+					data-help-body="<?php esc_attr_e( 'The medium or setting for your one-to-one connect.||In person — you met face-to-face: over coffee, at an event, at their office, or anywhere you were physically present together.||Zoom — you met via video call (Zoom, Teams, Google Meet, etc.).||Telephone — you spoke by phone without video.', 'inc-stats-tracker' ); ?>"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="14" height="14" aria-hidden="true" focusable="false"><circle cx="8" cy="8" r="7" stroke="currentColor" stroke-width="1.5" fill="none"/><circle cx="8" cy="5.5" r="1" fill="currentColor"/><rect x="7.25" y="7.5" width="1.5" height="4" rx="0.75" fill="currentColor"/></svg></button>
+			</legend>
 			<div class="ist-radio-group">
 				<label class="ist-radio-label">
 					<input type="radio" name="meet_where" value="in-person" required>
@@ -136,7 +152,13 @@ $error = isset( $_GET['ist_error'] ) ? sanitize_text_field( wp_unslash( $_GET['i
 		</fieldset>
 
 		<p>
-			<label for="ist-con-note"><?php esc_html_e( 'Topic of Conversation (optional)', 'inc-stats-tracker' ); ?></label>
+			<label for="ist-con-note">
+				<?php esc_html_e( 'Topic of Conversation', 'inc-stats-tracker' ); ?>
+				<span class="ist-label-optional"><?php esc_html_e( '(optional)', 'inc-stats-tracker' ); ?></span>
+				<button type="button" class="ist-help-icon" aria-label="<?php esc_attr_e( 'Help: Topic of Conversation', 'inc-stats-tracker' ); ?>"
+					data-help-title="<?php esc_attr_e( 'Topic of Conversation', 'inc-stats-tracker' ); ?>"
+					data-help-body="<?php esc_attr_e( 'A brief note on what you discussed during the connect. This is for your own records and memory — it does not appear in group reports or leaderboards. Helpful for recalling context when you follow up.', 'inc-stats-tracker' ); ?>"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="14" height="14" aria-hidden="true" focusable="false"><circle cx="8" cy="8" r="7" stroke="currentColor" stroke-width="1.5" fill="none"/><circle cx="8" cy="5.5" r="1" fill="currentColor"/><rect x="7.25" y="7.5" width="1.5" height="4" rx="0.75" fill="currentColor"/></svg></button>
+			</label>
 			<textarea id="ist-con-note" name="note" rows="3"
 				placeholder="<?php esc_attr_e( 'A general idea of what you discussed', 'inc-stats-tracker' ); ?>"></textarea>
 		</p>

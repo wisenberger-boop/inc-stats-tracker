@@ -119,6 +119,15 @@ class IST_Group_Extension extends BP_Group_Extension {
 			$user_ids
 		);
 
+		// -----------------------------------------------------------------------
+		// Attribution reporting — FY scope, all group members.
+		// -----------------------------------------------------------------------
+		$tyfcb_rollup      = IST_Stats_Query::tyfcb_attribution_rollup( $fy_start, $fy_end, $user_ids );
+		$tyfcb_coverage    = IST_Stats_Query::tyfcb_model_coverage( $fy_start, $fy_end, $user_ids );
+		$tyfcb_by_source   = IST_Stats_Query::tyfcb_by_attribution_source( $fy_start, $fy_end, $user_ids );
+		$tyfcb_by_rel      = IST_Stats_Query::tyfcb_by_relationship_type( $fy_start, $fy_end, $user_ids );
+		$tyfcb_by_referrer = IST_Stats_Query::tyfcb_by_referrer_type( $fy_start, $fy_end, $user_ids );
+
 		$form_urls = ist_get_form_urls();
 
 		// Required by the form templates rendered inside the modal containers.
@@ -137,6 +146,7 @@ class IST_Group_Extension extends BP_Group_Extension {
 			'tyfcb_leaderboard', 'referral_leaderboard', 'connect_leaderboard',
 			'trend_data',
 			'fy_monthly_data', 'ytd_data', 'prior_fy_label',
+			'tyfcb_rollup', 'tyfcb_coverage', 'tyfcb_by_source', 'tyfcb_by_rel', 'tyfcb_by_referrer',
 			'form_urls',
 			'group_members', 'current_user', 'my_stats_url', 'atts'
 		) );

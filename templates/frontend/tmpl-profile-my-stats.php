@@ -17,6 +17,11 @@
  *   $connect_recent  array     Recent connect rows
  *   $trend_data      array     3-month trend data from IST_Stats_Query::three_month_trend().
  *                              Each item: { label, tyfcb_amount, ref_count, con_count }
+ *   $tyfcb_rollup      array     From IST_Stats_Query::tyfcb_attribution_rollup() — FY scope.
+ *   $tyfcb_coverage    array     From IST_Stats_Query::tyfcb_model_coverage() — FY scope.
+ *   $tyfcb_by_source   array     From IST_Stats_Query::tyfcb_by_attribution_source() — FY scope.
+ *   $tyfcb_by_rel      array     From IST_Stats_Query::tyfcb_by_relationship_type() — FY scope.
+ *   $tyfcb_by_referrer array     From IST_Stats_Query::tyfcb_by_referrer_type() — FY scope.
  *   $form_urls       array     { tyfcb, referral, connect } — used on Group Stats only;
  *                              My Stats uses modal triggers instead.
  *   $group_members   object[]  Each object: { ID, display_name, user_email }
@@ -212,6 +217,18 @@ $atts        = array(); // Shortcode atts not applicable on profile nav pages.
 	<p class="ist-chart-note"><?php esc_html_e( '* Current month is month-to-date.', 'inc-stats-tracker' ); ?></p>
 
 	<?php endif; ?>
+
+	<?php /* ----------------------------------------------------------------
+	   Closed Business Attribution
+	   --------------------------------------------------------------- */ ?>
+	<?php ist_get_template( 'frontend/partials/tmpl-tyfcb-attribution.php', array(
+		'rollup_data'   => $tyfcb_rollup,
+		'coverage_data' => $tyfcb_coverage,
+		'attr_source'   => $tyfcb_by_source,
+		'attr_rel_type' => $tyfcb_by_rel,
+		'attr_referrer' => $tyfcb_by_referrer,
+		'fy_label'      => $fy_label,
+	) ); ?>
 
 	<?php /* ----------------------------------------------------------------
 	   Recent Records

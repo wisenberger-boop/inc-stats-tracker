@@ -3,7 +3,7 @@
  * Plugin Name:       INC Stats Tracker
  * Plugin URI:        https://example.com/inc-stats-tracker
  * Description:       Tracks TYFCB, referrals, connects, and member activity for INC reporting.
- * Version:           0.2.13
+ * Version:           0.2.25
  * Requires at least: 6.0
  * Requires PHP:      8.0
  * Author:            Your Name
@@ -19,7 +19,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 // Plugin constants.
-define( 'IST_VERSION', '0.2.13' );
+define( 'IST_VERSION', '0.2.25' );
 define( 'IST_PLUGIN_FILE', __FILE__ );
 define( 'IST_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'IST_PLUGIN_URL', plugin_dir_url( __FILE__ ) );

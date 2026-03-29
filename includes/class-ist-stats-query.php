@@ -287,6 +287,394 @@ class IST_Stats_Query {
 	}
 
 	// -------------------------------------------------------------------------
+	// Attribution reporting (Phase 5)
+	//
+	// These methods power the two tiers of attribution analysis:
+	//
+	//   Tier 1 — cross-era rollup (tyfcb_attribution_rollup)
+	//     Works on ALL records, legacy and enhanced. Uses a conservative
+	//     CASE expression to assign every record to one of three buckets:
+	//       referral_attributed         — clear referral signal in the data
+	//       non_referral                — clear non-referral signal
+	//       unknown_legacy_unclassified — insufficient data to classify
+	//
+	//     Mapping rules (documented here and NOT assumed elsewhere):
+	//       Enhanced records (attribution_model = 'enhanced'):
+	//         revenue_attribution_source IN (current_member_referral,
+	//           former_member_referral, third_party_extended_referral)
+	//                                        → referral_attributed
+	//         revenue_attribution_source = direct_non_referral → non_referral
+	//         revenue_attribution_source = unknown_other        → unknown_*
+	//
+	//       Legacy records (attribution_model = 'legacy'):
+	//         referral_type IN ('inside', 'tier-3') → referral_attributed
+	//           (inside/tier-3 are unambiguous referral types in group context)
+	//         referral_type = 'outside'             → unknown_legacy_unclassified
+	//           (NOT mapped to non_referral — "outside" in legacy context could
+	//           represent a former member referral, indirect downstream referral,
+	//           recurring revenue from an old referral, or business explained only
+	//           in notes. Only enhanced records with explicit direct_non_referral
+	//           source have the fidelity to support a non_referral classification.)
+	//         referral_type = ''                    → unknown_*
+	//           (historical import; no type was recorded)
+	//
+	//   Tier 2 — enhanced-only breakdowns (tyfcb_by_*)
+	//     Restricted to attribution_model = 'enhanced'. Callers must label
+	//     these outputs as enhanced-only in the UI — do not backfill for
+	//     legacy records.
+	// -------------------------------------------------------------------------
+
+	/**
+	 * Cross-era attribution rollup for Closed Business records.
+	 *
+	 * Assigns every record in the date range to one of three common-denominator
+	 * buckets using the CASE expression described in the section header above.
+	 * Works on both 'legacy' and 'enhanced' attribution_model records.
+	 *
+	 * Key design principle: only enhanced records with explicit direct_non_referral
+	 * source are classified as non_referral. Legacy 'outside' referral_type is NOT
+	 * mapped to non_referral — it carries insufficient fidelity to support that
+	 * claim and is instead placed in unknown_legacy_unclassified.
+	 *
+	 * @param string $date_start  Y-m-d inclusive.
+	 * @param string $date_end    Y-m-d inclusive.
+	 * @param array  $user_ids    Scope to these submitted_by_user_id values. Empty = all.
+	 * @return array {
+	 *     referral_attributed:         { amount: float, count: int }
+	 *     non_referral:                { amount: float, count: int }
+	 *     unknown_legacy_unclassified: { amount: float, count: int }
+	 * }
+	 */
+	public static function tyfcb_attribution_rollup(
+		string $date_start,
+		string $date_end,
+		array  $user_ids = array()
+	): array {
+		global $wpdb;
+
+		$table = $wpdb->prefix . 'ist_tyfcb';
+		$args  = array( $date_start, $date_end );
+
+		// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		$sql = "SELECT
+		            CASE
+		                WHEN attribution_model = 'enhanced'
+		                     AND revenue_attribution_source IN (
+		                         'current_member_referral',
+		                         'former_member_referral',
+		                         'third_party_extended_referral'
+		                     )
+		                     THEN 'referral_attributed'
+		                WHEN attribution_model = 'enhanced'
+		                     AND revenue_attribution_source = 'direct_non_referral'
+		                     THEN 'non_referral'
+		                WHEN attribution_model = 'enhanced'
+		                     THEN 'unknown_legacy_unclassified'
+		                WHEN attribution_model = 'legacy'
+		                     AND referral_type IN ('inside', 'tier-3')
+		                     THEN 'referral_attributed'
+		                ELSE 'unknown_legacy_unclassified'
+		            END AS bucket,
+		            COALESCE(SUM(amount), 0) AS amount,
+		            COUNT(*) AS count
+		        FROM {$table}
+		        WHERE entry_date BETWEEN %s AND %s";
+		// phpcs:enable
+
+		if ( $user_ids ) {
+			$sql  .= ' AND submitted_by_user_id IN (' . self::placeholders( $user_ids ) . ')';
+			$args  = array_merge( $args, array_map( 'absint', $user_ids ) );
+		}
+
+		$sql .= ' GROUP BY bucket';
+
+		$rows = $wpdb->get_results( $wpdb->prepare( $sql, $args ) ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+
+		// Pre-populate all buckets with zero so callers always get all three keys.
+		$result = array(
+			'referral_attributed'         => array( 'amount' => 0.0, 'count' => 0 ),
+			'non_referral'                => array( 'amount' => 0.0, 'count' => 0 ),
+			'unknown_legacy_unclassified' => array( 'amount' => 0.0, 'count' => 0 ),
+		);
+
+		foreach ( $rows ?: array() as $row ) {
+			if ( isset( $result[ $row->bucket ] ) ) {
+				$result[ $row->bucket ] = array(
+					'amount' => (float) $row->amount,
+					'count'  => (int)   $row->count,
+				);
+			}
+		}
+
+		return $result;
+	}
+
+	/**
+	 * Closed Business grouped by Revenue Attribution Source.
+	 *
+	 * Enhanced-only (attribution_model = 'enhanced').
+	 * Callers must label results as covering enhanced records only.
+	 *
+	 * @param string $date_start
+	 * @param string $date_end
+	 * @param array  $user_ids    Scope. Empty = all.
+	 * @return array  Rows: { source: string, amount: float, count: int }
+	 *                Ordered by amount DESC.
+	 */
+	public static function tyfcb_by_attribution_source(
+		string $date_start,
+		string $date_end,
+		array  $user_ids = array()
+	): array {
+		global $wpdb;
+
+		$table = $wpdb->prefix . 'ist_tyfcb';
+		$args  = array( $date_start, $date_end );
+		$sql   = "SELECT revenue_attribution_source AS source,
+		                 COALESCE(SUM(amount), 0) AS amount,
+		                 COUNT(*) AS count
+		          FROM {$table}
+		          WHERE attribution_model = 'enhanced'
+		            AND entry_date BETWEEN %s AND %s";
+
+		if ( $user_ids ) {
+			$sql  .= ' AND submitted_by_user_id IN (' . self::placeholders( $user_ids ) . ')';
+			$args  = array_merge( $args, array_map( 'absint', $user_ids ) );
+		}
+
+		$sql .= ' GROUP BY revenue_attribution_source ORDER BY amount DESC';
+
+		$rows = $wpdb->get_results( $wpdb->prepare( $sql, $args ) ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+		if ( ! $rows ) {
+			return array();
+		}
+
+		return array_map( static function ( $row ) {
+			return array(
+				'source' => $row->source,
+				'amount' => (float) $row->amount,
+				'count'  => (int)   $row->count,
+			);
+		}, $rows );
+	}
+
+	/**
+	 * Closed Business grouped by Revenue Relationship Type.
+	 *
+	 * Enhanced-only (attribution_model = 'enhanced').
+	 *
+	 * @param string $date_start
+	 * @param string $date_end
+	 * @param array  $user_ids    Scope. Empty = all.
+	 * @return array  Rows: { relationship_type: string, amount: float, count: int }
+	 *                Ordered by amount DESC.
+	 */
+	public static function tyfcb_by_relationship_type(
+		string $date_start,
+		string $date_end,
+		array  $user_ids = array()
+	): array {
+		global $wpdb;
+
+		$table = $wpdb->prefix . 'ist_tyfcb';
+		$args  = array( $date_start, $date_end );
+		$sql   = "SELECT revenue_relationship_type AS relationship_type,
+		                 COALESCE(SUM(amount), 0) AS amount,
+		                 COUNT(*) AS count
+		          FROM {$table}
+		          WHERE attribution_model = 'enhanced'
+		            AND entry_date BETWEEN %s AND %s";
+
+		if ( $user_ids ) {
+			$sql  .= ' AND submitted_by_user_id IN (' . self::placeholders( $user_ids ) . ')';
+			$args  = array_merge( $args, array_map( 'absint', $user_ids ) );
+		}
+
+		$sql .= ' GROUP BY revenue_relationship_type ORDER BY amount DESC';
+
+		$rows = $wpdb->get_results( $wpdb->prepare( $sql, $args ) ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+		if ( ! $rows ) {
+			return array();
+		}
+
+		return array_map( static function ( $row ) {
+			return array(
+				'relationship_type' => $row->relationship_type,
+				'amount'            => (float) $row->amount,
+				'count'             => (int)   $row->count,
+			);
+		}, $rows );
+	}
+
+	/**
+	 * Closed Business grouped by Original Referrer Type.
+	 *
+	 * Enhanced-only, referral-attributed records only (original_referrer_type
+	 * is only populated when the attribution source is a referral type).
+	 * Records with original_referrer_type = '' are excluded.
+	 *
+	 * @param string $date_start
+	 * @param string $date_end
+	 * @param array  $user_ids    Scope. Empty = all.
+	 * @return array  Rows: { referrer_type: string, amount: float, count: int }
+	 *                Ordered by amount DESC.
+	 */
+	public static function tyfcb_by_referrer_type(
+		string $date_start,
+		string $date_end,
+		array  $user_ids = array()
+	): array {
+		global $wpdb;
+
+		$table = $wpdb->prefix . 'ist_tyfcb';
+		$args  = array( $date_start, $date_end );
+		$sql   = "SELECT original_referrer_type AS referrer_type,
+		                 COALESCE(SUM(amount), 0) AS amount,
+		                 COUNT(*) AS count
+		          FROM {$table}
+		          WHERE attribution_model = 'enhanced'
+		            AND original_referrer_type != ''
+		            AND entry_date BETWEEN %s AND %s";
+
+		if ( $user_ids ) {
+			$sql  .= ' AND submitted_by_user_id IN (' . self::placeholders( $user_ids ) . ')';
+			$args  = array_merge( $args, array_map( 'absint', $user_ids ) );
+		}
+
+		$sql .= ' GROUP BY original_referrer_type ORDER BY amount DESC';
+
+		$rows = $wpdb->get_results( $wpdb->prepare( $sql, $args ) ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+		if ( ! $rows ) {
+			return array();
+		}
+
+		return array_map( static function ( $row ) {
+			return array(
+				'referrer_type' => $row->referrer_type,
+				'amount'        => (float) $row->amount,
+				'count'         => (int)   $row->count,
+			);
+		}, $rows );
+	}
+
+	/**
+	 * Closed Business grouped by Referral Lineage Type.
+	 *
+	 * Enhanced-only, restricted to referral-attributed attribution sources
+	 * (current_member_referral, former_member_referral,
+	 * third_party_extended_referral).
+	 *
+	 * Records where referral_lineage_type = '' (not specified by submitter) are
+	 * included as a distinct bucket — they represent valid referral-attributed
+	 * business where the submitter did not characterise the lineage. Do not
+	 * exclude them.
+	 *
+	 * @param string $date_start
+	 * @param string $date_end
+	 * @param array  $user_ids    Scope. Empty = all.
+	 * @return array  Rows: { lineage_type: string, amount: float, count: int }
+	 *                Ordered by amount DESC.
+	 */
+	public static function tyfcb_by_lineage_type(
+		string $date_start,
+		string $date_end,
+		array  $user_ids = array()
+	): array {
+		global $wpdb;
+
+		$table = $wpdb->prefix . 'ist_tyfcb';
+		$args  = array( $date_start, $date_end );
+
+		// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		$sql = "SELECT referral_lineage_type AS lineage_type,
+		               COALESCE(SUM(amount), 0) AS amount,
+		               COUNT(*) AS count
+		        FROM {$table}
+		        WHERE attribution_model = 'enhanced'
+		          AND revenue_attribution_source IN (
+		              'current_member_referral',
+		              'former_member_referral',
+		              'third_party_extended_referral'
+		          )
+		          AND entry_date BETWEEN %s AND %s";
+		// phpcs:enable
+
+		if ( $user_ids ) {
+			$sql  .= ' AND submitted_by_user_id IN (' . self::placeholders( $user_ids ) . ')';
+			$args  = array_merge( $args, array_map( 'absint', $user_ids ) );
+		}
+
+		$sql .= ' GROUP BY referral_lineage_type ORDER BY amount DESC';
+
+		$rows = $wpdb->get_results( $wpdb->prepare( $sql, $args ) ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+		if ( ! $rows ) {
+			return array();
+		}
+
+		return array_map( static function ( $row ) {
+			return array(
+				'lineage_type' => $row->lineage_type,
+				'amount'       => (float) $row->amount,
+				'count'        => (int)   $row->count,
+			);
+		}, $rows );
+	}
+
+	/**
+	 * Attribution model split: how many FY records are enhanced vs legacy.
+	 *
+	 * Used by the Phase 6 dashboard to show data-coverage context
+	 * ("X of Y records include enhanced attribution").
+	 *
+	 * @param string $date_start
+	 * @param string $date_end
+	 * @param array  $user_ids    Scope. Empty = all.
+	 * @return array {
+	 *     enhanced: { amount: float, count: int }
+	 *     legacy:   { amount: float, count: int }
+	 * }
+	 */
+	public static function tyfcb_model_coverage(
+		string $date_start,
+		string $date_end,
+		array  $user_ids = array()
+	): array {
+		global $wpdb;
+
+		$table = $wpdb->prefix . 'ist_tyfcb';
+		$args  = array( $date_start, $date_end );
+		$sql   = "SELECT attribution_model AS model,
+		                 COALESCE(SUM(amount), 0) AS amount,
+		                 COUNT(*) AS count
+		          FROM {$table}
+		          WHERE entry_date BETWEEN %s AND %s";
+
+		if ( $user_ids ) {
+			$sql  .= ' AND submitted_by_user_id IN (' . self::placeholders( $user_ids ) . ')';
+			$args  = array_merge( $args, array_map( 'absint', $user_ids ) );
+		}
+
+		$sql .= ' GROUP BY attribution_model';
+
+		$rows = $wpdb->get_results( $wpdb->prepare( $sql, $args ) ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+
+		$result = array(
+			'enhanced' => array( 'amount' => 0.0, 'count' => 0 ),
+			'legacy'   => array( 'amount' => 0.0, 'count' => 0 ),
+		);
+
+		foreach ( $rows ?: array() as $row ) {
+			$key = ( 'enhanced' === $row->model ) ? 'enhanced' : 'legacy';
+			$result[ $key ] = array(
+				'amount' => (float) $row->amount,
+				'count'  => (int)   $row->count,
+			);
+		}
+
+		return $result;
+	}
+
+	// -------------------------------------------------------------------------
 	// Leaderboards
 	// -------------------------------------------------------------------------
 

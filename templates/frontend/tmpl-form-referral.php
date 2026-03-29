@@ -75,25 +75,30 @@ $error = isset( $_GET['ist_error'] ) ? sanitize_text_field( wp_unslash( $_GET['i
 
 		<?php /* Referral recipient — group member or outside contact */ ?>
 		<fieldset class="ist-fieldset">
-			<legend><?php esc_html_e( 'Referred To', 'inc-stats-tracker' ); ?></legend>
+			<legend>
+				<?php esc_html_e( 'Referred To', 'inc-stats-tracker' ); ?>
+				<button type="button" class="ist-help-icon" aria-label="<?php esc_attr_e( 'Help: Referred To', 'inc-stats-tracker' ); ?>"
+					data-help-title="<?php esc_attr_e( 'Referred To', 'inc-stats-tracker' ); ?>"
+					data-help-body="<?php esc_attr_e( 'Who are you referring, and to whom are you sending them?||Group Member — choose this when you are sending a prospect or contact TO a current group member (they will receive the business opportunity).||Other — choose this when you are sending someone to a person or business outside the group, or when you are logging a referral you made to anyone not currently on the group roster.', 'inc-stats-tracker' ); ?>"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="14" height="14" aria-hidden="true" focusable="false"><circle cx="8" cy="8" r="7" stroke="currentColor" stroke-width="1.5" fill="none"/><circle cx="8" cy="5.5" r="1" fill="currentColor"/><rect x="7.25" y="7.5" width="1.5" height="4" rx="0.75" fill="currentColor"/></svg></button>
+			</legend>
 
 			<div class="ist-radio-group">
 				<label class="ist-radio-label">
 					<input type="radio" name="referred_to_type" value="member"
-						class="ist-recipient-toggle" data-panel="ist-ref-recipient-member">
+						class="ist-recipient-toggle" data-panel="ist-ref-recipient-member" checked>
 					<?php esc_html_e( 'Group Member', 'inc-stats-tracker' ); ?>
 				</label>
 				<label class="ist-radio-label">
 					<input type="radio" name="referred_to_type" value="other"
-						class="ist-recipient-toggle" data-panel="ist-ref-recipient-other" checked>
+						class="ist-recipient-toggle" data-panel="ist-ref-recipient-other">
 					<?php esc_html_e( 'Other', 'inc-stats-tracker' ); ?>
 				</label>
 			</div>
 
 			<?php /* Panel: select a member from the group */ ?>
-			<div id="ist-ref-recipient-member" class="ist-recipient-panel" aria-hidden="true">
+			<div id="ist-ref-recipient-member" class="ist-recipient-panel ist-visible">
 				<label for="ist-ref-to-member"><?php esc_html_e( 'Select Member', 'inc-stats-tracker' ); ?></label>
-				<select id="ist-ref-to-member" name="referred_to_user_id" disabled>
+				<select id="ist-ref-to-member" name="referred_to_user_id">
 					<option value=""><?php esc_html_e( '— Select Member —', 'inc-stats-tracker' ); ?></option>
 					<?php foreach ( $group_members as $member ) : ?>
 						<option value="<?php echo esc_attr( $member->ID ); ?>">
@@ -104,7 +109,7 @@ $error = isset( $_GET['ist_error'] ) ? sanitize_text_field( wp_unslash( $_GET['i
 			</div>
 
 			<?php /* Panel: free-text name and email for any non-member recipient */ ?>
-			<div id="ist-ref-recipient-other" class="ist-recipient-panel ist-visible">
+			<div id="ist-ref-recipient-other" class="ist-recipient-panel" aria-hidden="true">
 				<label for="ist-ref-to-name"><?php esc_html_e( 'Name or Business', 'inc-stats-tracker' ); ?></label>
 				<input type="text" id="ist-ref-to-name" name="referred_to_name"
 					placeholder="<?php esc_attr_e( 'Name of the person or business you referred', 'inc-stats-tracker' ); ?>">
@@ -116,7 +121,12 @@ $error = isset( $_GET['ist_error'] ) ? sanitize_text_field( wp_unslash( $_GET['i
 		</fieldset>
 
 		<p>
-			<label for="ist-ref-date"><?php esc_html_e( 'Referral Date', 'inc-stats-tracker' ); ?></label>
+			<label for="ist-ref-date">
+				<?php esc_html_e( 'Referral Date', 'inc-stats-tracker' ); ?>
+				<button type="button" class="ist-help-icon" aria-label="<?php esc_attr_e( 'Help: Referral Date', 'inc-stats-tracker' ); ?>"
+					data-help-title="<?php esc_attr_e( 'Referral Date', 'inc-stats-tracker' ); ?>"
+					data-help-body="<?php esc_attr_e( 'The date you made or initiated this referral. Use today\'s date if you\'re logging it right away. If you\'re catching up on a past referral, enter the actual date it happened — this is what appears in reporting.', 'inc-stats-tracker' ); ?>"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="14" height="14" aria-hidden="true" focusable="false"><circle cx="8" cy="8" r="7" stroke="currentColor" stroke-width="1.5" fill="none"/><circle cx="8" cy="5.5" r="1" fill="currentColor"/><rect x="7.25" y="7.5" width="1.5" height="4" rx="0.75" fill="currentColor"/></svg></button>
+			</label>
 			<input type="date" id="ist-ref-date" name="entry_date"
 				value="<?php echo esc_attr( $today ); ?>"
 				max="<?php echo esc_attr( $today ); ?>"
@@ -125,7 +135,13 @@ $error = isset( $_GET['ist_error'] ) ? sanitize_text_field( wp_unslash( $_GET['i
 
 		<?php /* Referral Status — how was the referral handed off? */ ?>
 		<fieldset class="ist-fieldset">
-			<legend><?php esc_html_e( 'How did you hand it off?', 'inc-stats-tracker' ); ?> <span aria-hidden="true">*</span></legend>
+			<legend>
+				<?php esc_html_e( 'How did you hand it off?', 'inc-stats-tracker' ); ?>
+				<span aria-hidden="true"> *</span>
+				<button type="button" class="ist-help-icon" aria-label="<?php esc_attr_e( 'Help: Handoff Method', 'inc-stats-tracker' ); ?>"
+					data-help-title="<?php esc_attr_e( 'Handoff Method', 'inc-stats-tracker' ); ?>"
+					data-help-body="<?php esc_attr_e( 'How did you connect the two parties?||Emailed introduction — you sent a mutual introduction email. If you enter an email address for the recipient below, a referral notification will be sent automatically.||Gave phone number — you shared the recipient\'s contact information verbally or in writing.||Said you would initiate contact — you told the referral recipient that you or someone else would reach out on their behalf.', 'inc-stats-tracker' ); ?>"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="14" height="14" aria-hidden="true" focusable="false"><circle cx="8" cy="8" r="7" stroke="currentColor" stroke-width="1.5" fill="none"/><circle cx="8" cy="5.5" r="1" fill="currentColor"/><rect x="7.25" y="7.5" width="1.5" height="4" rx="0.75" fill="currentColor"/></svg></button>
+			</legend>
 			<div class="ist-radio-group ist-radio-group--stack">
 				<label class="ist-radio-label">
 					<input type="radio" name="status" value="emailed" required>
@@ -144,7 +160,13 @@ $error = isset( $_GET['ist_error'] ) ? sanitize_text_field( wp_unslash( $_GET['i
 
 		<?php /* Referral Type — how does this referral relate to the group? */ ?>
 		<fieldset class="ist-fieldset">
-			<legend><?php esc_html_e( 'Referral Type', 'inc-stats-tracker' ); ?> <span aria-hidden="true">*</span></legend>
+			<legend>
+				<?php esc_html_e( 'Referral Type', 'inc-stats-tracker' ); ?>
+				<span aria-hidden="true"> *</span>
+				<button type="button" class="ist-help-icon" aria-label="<?php esc_attr_e( 'Help: Referral Type', 'inc-stats-tracker' ); ?>"
+					data-help-title="<?php esc_attr_e( 'Referral Type', 'inc-stats-tracker' ); ?>"
+					data-help-body="<?php esc_attr_e( 'How does this referral relate to your group?||Inside — you referred a prospect or contact TO a current group member (they receive the business). This is the most common type.||Outside — you referred a group member or member\'s contact TO someone outside the group.||Tier 3 — this referral was passed along through a chain that originated from a prior referral within the group (a referral of a referral).', 'inc-stats-tracker' ); ?>"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="14" height="14" aria-hidden="true" focusable="false"><circle cx="8" cy="8" r="7" stroke="currentColor" stroke-width="1.5" fill="none"/><circle cx="8" cy="5.5" r="1" fill="currentColor"/><rect x="7.25" y="7.5" width="1.5" height="4" rx="0.75" fill="currentColor"/></svg></button>
+			</legend>
 			<div class="ist-radio-group">
 				<label class="ist-radio-label">
 					<input type="radio" name="referral_type" value="inside" required>
@@ -163,7 +185,13 @@ $error = isset( $_GET['ist_error'] ) ? sanitize_text_field( wp_unslash( $_GET['i
 		</fieldset>
 
 		<p>
-			<label for="ist-ref-note"><?php esc_html_e( 'Referral Details', 'inc-stats-tracker' ); ?></label>
+			<label for="ist-ref-note">
+				<?php esc_html_e( 'Referral Details', 'inc-stats-tracker' ); ?>
+				<span class="ist-label-optional"><?php esc_html_e( '(optional)', 'inc-stats-tracker' ); ?></span>
+				<button type="button" class="ist-help-icon" aria-label="<?php esc_attr_e( 'Help: Referral Details', 'inc-stats-tracker' ); ?>"
+					data-help-title="<?php esc_attr_e( 'Referral Details', 'inc-stats-tracker' ); ?>"
+					data-help-body="<?php esc_attr_e( 'Any context that helps the recipient follow up effectively: what the prospect needs, the best way to reach them, background on the relationship, or how you know them. This note is private to your group and does not appear in public reports.', 'inc-stats-tracker' ); ?>"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="14" height="14" aria-hidden="true" focusable="false"><circle cx="8" cy="8" r="7" stroke="currentColor" stroke-width="1.5" fill="none"/><circle cx="8" cy="5.5" r="1" fill="currentColor"/><rect x="7.25" y="7.5" width="1.5" height="4" rx="0.75" fill="currentColor"/></svg></button>
+			</label>
 			<textarea id="ist-ref-note" name="note" rows="3"
 				placeholder="<?php esc_attr_e( 'Contact information, description of need, any relevant context', 'inc-stats-tracker' ); ?>"></textarea>
 		</p>

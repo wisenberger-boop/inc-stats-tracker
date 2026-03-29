@@ -86,6 +86,15 @@ class IST_Activator {
 			business_type        VARCHAR(20) NOT NULL DEFAULT '',
 			referral_type        VARCHAR(20) NOT NULL DEFAULT '',
 			note                 TEXT,
+			attribution_model            VARCHAR(20)  NOT NULL DEFAULT 'legacy',
+			revenue_attribution_source   VARCHAR(50)  NOT NULL DEFAULT '',
+			revenue_relationship_type    VARCHAR(50)  NOT NULL DEFAULT '',
+			client_payer_name            VARCHAR(255) NOT NULL DEFAULT '',
+			original_referrer_name       VARCHAR(255) NOT NULL DEFAULT '',
+			original_referrer_user_id    BIGINT(20) UNSIGNED DEFAULT NULL,
+			original_referrer_type       VARCHAR(20)  NOT NULL DEFAULT '',
+			referral_lineage_type        VARCHAR(50)  NOT NULL DEFAULT '',
+			attribution_notes            TEXT,
 			entry_date           DATE NOT NULL,
 			created_at           DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
 			updated_at           DATETIME DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
@@ -93,6 +102,7 @@ class IST_Activator {
 			PRIMARY KEY  (id),
 			KEY submitted_by_user_id (submitted_by_user_id),
 			KEY thank_you_to_user_id (thank_you_to_user_id),
+			KEY attribution_model (attribution_model),
 			KEY entry_date (entry_date)
 		) $charset;";
 
