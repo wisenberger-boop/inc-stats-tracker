@@ -6,7 +6,7 @@ setlocal
 set PLUGIN_NAME=inc-stats-tracker
 set VERSION=1.0.1-rc1
 
-:: Paths — all resolved relative to this script's location (tools\)
+:: Paths resolved relative to this script's location (tools\)
 set ROOT=%~dp0..
 set PLUGIN_DIR=%ROOT%\plugin\%PLUGIN_NAME%
 set RELEASES_DIR=%ROOT%\build\releases
@@ -57,11 +57,15 @@ echo.
 echo  Packaging %PLUGIN_NAME% v%VERSION% ...
 echo.
 
-powershell -NoProfile -Command "Compress-Archive -Path '%PLUGIN_DIR%' -DestinationPath '%ZIP_PATH%'"
+powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0package-plugin.ps1" ^
+    -PluginName "%PLUGIN_NAME%" ^
+    -Version   "%VERSION%"     ^
+    -PluginDir "%PLUGIN_DIR%"  ^
+    -ZipPath   "%ZIP_PATH%"
 
 if errorlevel 1 (
     echo.
-    echo  ERROR: Compress-Archive failed. See PowerShell output above.
+    echo  ERROR: PowerShell packaging script failed. See output above.
     goto :fail
 )
 
