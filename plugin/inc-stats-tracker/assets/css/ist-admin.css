@@ -1,0 +1,70 @@
+/* INC Stats Tracker — Admin styles */
+
+/* ---- Source tags (import / native) on record list pages ---- */
+
+.ist-source-tag {
+	display: inline-block;
+	padding: 2px 7px;
+	border-radius: 3px;
+	font-size: 11px;
+	font-weight: 600;
+	line-height: 1.6;
+	text-transform: uppercase;
+	letter-spacing: 0.04em;
+}
+
+.ist-source-tag--import {
+	background: #fef3cd;
+	color: #7a5800;
+}
+
+.ist-source-tag--native {
+	background: #d7f0d7;
+	color: #1a5c1a;
+}
+
+/* ---- Row-actions visibility (align with WP core pattern) ---- */
+
+.wp-list-table .row-actions {
+	color: #646970;
+}
+
+/* ---- Misc admin tags ---- */
+
+.ist-tag {
+	display: inline-block;
+	margin-left: 4px;
+	padding: 1px 6px;
+	border-radius: 3px;
+	font-size: 11px;
+	background: #f0f0f1;
+	color: #50575e;
+}
+
+.ist-stat-cards {
+	display: flex;
+	gap: 16px;
+	margin-top: 16px;
+}
+
+.ist-card {
+	background: #fff;
+	border: 1px solid #c3c4c7;
+	border-radius: 4px;
+	padding: 20px 24px;
+	min-width: 160px;
+}
+
+.ist-card h2 {
+	margin: 0 0 8px;
+	font-size: 14px;
+	font-weight: 600;
+	color: #50575e;
+}
+
+.ist-card__count {
+	margin: 0;
+	font-size: 28px;
+	font-weight: 700;
+	color: #2271b1;
+}

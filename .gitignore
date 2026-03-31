@@ -1,0 +1,11 @@
+# Release ZIPs
+build/releases/*.zip
+
+# Runtime import CSVs inside plugin (copy here before import, remove after)
+plugin/inc-stats-tracker/docs/source-assets/csv/*.csv
+
+# Claude Code memory and session data
+.claude/
+
+# VS Code workspace file
+*.code-workspace

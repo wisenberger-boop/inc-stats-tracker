@@ -1,0 +1,1255 @@
+/*
+ * INC Stats Tracker — Frontend styles
+ *
+ * Design notes:
+ *  - Soft tonal backgrounds, not heavy borders, create section separation.
+ *  - Type hierarchy: page title → section title → label → value.
+ *  - Tables are lightly styled — readable but not dominant.
+ *  - Cards (KPI section, FY progress, leaderboard) use a subtle lift.
+ *  - Accent color: INC blue (#1e4e8c) with a lighter tint (#e8f0fa).
+ *  - All spacing in multiples of 4px.
+ */
+
+/* =========================================================================
+   Design tokens (used as plain values throughout — no CSS custom props
+   needed at this scope)
+   =========================================================================
+   --bg-page:      #ffffff
+   --bg-card:      #f7f9fc
+   --bg-muted:     #f0f4f9
+   --accent:       #1e4e8c
+   --accent-light: #e8f0fa
+   --text-primary: #1a1a1a
+   --text-muted:   #6b7280
+   --border:       #e2e8f0
+   --success-bg:   #f0fdf4
+   --success-text: #166534
+   --success-bdr:  #86efac
+   --error-bg:     #fef2f2
+   --error-text:   #991b1b
+   --error-bdr:    #fca5a5
+   ========================================================================= */
+
+/* =========================================================================
+   Shared wrappers
+   ========================================================================= */
+
+.ist-my-stats,
+.ist-group-stats-reports {
+	padding: 20px 0 32px;
+	color: #1a1a1a;
+	font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+/* =========================================================================
+   Page / section headings
+   ========================================================================= */
+
+.ist-my-stats h2,
+.ist-group-stats-reports h2 {
+	margin: 0 0 24px;
+	font-size: 22px;
+	font-weight: 700;
+	color: #1a1a1a;
+	letter-spacing: -0.2px;
+}
+
+/* =========================================================================
+   Page header — title + inline action link cluster
+   ========================================================================= */
+
+/* Flex row: title left, actions right. Wraps on narrow viewports. */
+.ist-page-header {
+	display: flex;
+	align-items: baseline;
+	justify-content: space-between;
+	flex-wrap: wrap;
+	gap: 10px 16px;
+	margin-bottom: 24px;
+}
+
+/* When the h2 is inside the page-header, the parent owns the bottom margin. */
+.ist-page-header h2 {
+	margin-bottom: 0;
+}
+
+.ist-header-actions {
+	display: flex;
+	gap: 8px;
+	flex-wrap: wrap;
+	align-items: center;
+}
+
+/* Outline-style secondary action — lighter than the filled .ist-submit-btn */
+.ist-header-action {
+	display: inline-block;
+	font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+	font-size: 13px;
+	font-weight: 600;
+	color: #1e4e8c !important;
+	text-decoration: none !important;
+	border: 1.5px solid #1e4e8c;
+	border-radius: 5px;
+	padding: 5px 12px;
+	line-height: 1.4;
+	white-space: nowrap;
+	transition: background 0.15s, color 0.15s;
+}
+
+.ist-header-action:hover,
+.ist-header-action:focus {
+	background: #1e4e8c;
+	color: #ffffff !important;
+	text-decoration: none !important;
+}
+
+/* =========================================================================
+   Notice banners (form submission feedback)
+   ========================================================================= */
+
+.ist-notice {
+	border-radius: 6px;
+	padding: 12px 16px;
+	font-size: 14px;
+	line-height: 1.5;
+	margin-bottom: 20px;
+}
+
+.ist-notice--success {
+	background: #f0fdf4;
+	border: 1px solid #86efac;
+	color: #166534;
+}
+
+.ist-notice--error {
+	background: #fef2f2;
+	border: 1px solid #fca5a5;
+	color: #991b1b;
+}
+
+.ist-notice--error a {
+	color: #991b1b;
+	text-decoration: underline;
+}
+
+/* "← Back to My Stats" link inside success notices */
+.ist-notice__back {
+	display: inline-block;
+	margin-top: 8px;
+	font-size: 13px;
+	font-weight: 600;
+	color: #166534;
+	text-decoration: underline;
+}
+
+.ist-notice__back:hover {
+	color: #14532d;
+}
+
+/* =========================================================================
+   KPI metric grid — 2-column card layout
+   ========================================================================= */
+
+.ist-kpi-grid {
+	display: grid;
+	grid-template-columns: repeat(2, 1fr);
+	gap: 12px;
+	margin-bottom: 28px;
+}
+
+.ist-kpi-card {
+	background: #f7f9fc;
+	border: 1px solid #e2e8f0;
+	border-top: 3px solid #1e4e8c;
+	border-radius: 8px;
+	padding: 14px 16px;
+}
+
+.ist-kpi-card__label {
+	font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+	font-size: 11px;
+	font-weight: 700;
+	text-transform: uppercase;
+	letter-spacing: 0.6px;
+	color: #6b7280;
+	margin-bottom: 10px;
+}
+
+.ist-kpi-card__values {
+	display: flex;
+	align-items: flex-end;
+}
+
+.ist-kpi-card__value {
+	display: flex;
+	flex-direction: column;
+	gap: 3px;
+}
+
+/* Month value: separated by a thin rule, visually secondary */
+.ist-kpi-card__value--month {
+	border-left: 1px solid #e2e8f0;
+	margin-left: 14px;
+	padding-left: 14px;
+}
+
+.ist-kpi-card__number {
+	font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+	font-size: 22px;
+	font-weight: 700;
+	color: #1e4e8c;
+	line-height: 1;
+}
+
+.ist-kpi-card__value--month .ist-kpi-card__number {
+	font-size: 15px;
+	font-weight: 600;
+	color: #374151;
+}
+
+.ist-kpi-card__period {
+	font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+	font-size: 11px;
+	font-weight: 500;
+	color: #6b7280;
+	white-space: nowrap;
+}
+
+/* =========================================================================
+   Fiscal Year Progress module
+   ========================================================================= */
+
+.ist-fy-progress {
+	background: #f7f9fc;
+	border: 1px solid #e2e8f0;
+	border-radius: 8px;
+	padding: 14px 18px;
+	margin-bottom: 28px;
+}
+
+.ist-fy-progress__header {
+	display: flex;
+	align-items: baseline;
+	gap: 10px;
+	margin-bottom: 10px;
+	flex-wrap: wrap;
+}
+
+.ist-fy-progress__label {
+	font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+	font-size: 13px;
+	font-weight: 700;
+	color: #374151;
+}
+
+.ist-fy-progress__range {
+	font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+	font-size: 12px;
+	color: #6b7280;
+}
+
+/* Progress bar track — slightly tinted to echo accent color */
+.ist-fy-progress__bar-wrap {
+	background: #e8f0fa;
+	border-radius: 99px;
+	height: 6px;
+	overflow: hidden;
+	margin-bottom: 8px;
+}
+
+/* Progress bar fill */
+.ist-fy-progress__bar {
+	height: 100%;
+	background: #1e4e8c;
+	border-radius: 99px;
+	transition: width 0.4s ease;
+	min-width: 3px;
+}
+
+.ist-fy-progress__meta {
+	display: flex;
+	align-items: center;
+	gap: 16px;
+	flex-wrap: wrap;
+}
+
+.ist-fy-progress__pct {
+	font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+	font-size: 12px;
+	font-weight: 700;
+	color: #1e4e8c;
+}
+
+.ist-fy-progress__days {
+	font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+	font-size: 12px;
+	color: #6b7280;
+}
+
+/* =========================================================================
+   Submit action buttons
+   ========================================================================= */
+
+.ist-submit-actions {
+	display: flex;
+	gap: 10px;
+	flex-wrap: wrap;
+	margin-bottom: 28px;
+}
+
+.ist-submit-btn {
+	display: inline-block;
+	background: #1e4e8c;
+	/* Force overrides — theme link styles can bleed onto <a> and <button> elements */
+	color: #ffffff !important;
+	border: none;
+	border-radius: 6px;
+	padding: 9px 18px;
+	font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+	font-size: 14px;
+	font-weight: 600;
+	text-decoration: none !important;
+	line-height: 1.4;
+	cursor: pointer;
+	transition: background 0.15s;
+}
+
+.ist-submit-btn:hover,
+.ist-submit-btn:focus {
+	background: #163b6e;
+	color: #ffffff !important;
+	text-decoration: none !important;
+}
+
+/* =========================================================================
+   Recent Records section
+   ========================================================================= */
+
+.ist-recent-records {
+	margin-top: 32px;
+}
+
+/* Section label: uppercase with readable contrast */
+.ist-recent-records h3 {
+	margin: 0;
+	padding: 28px 0 8px;
+	border-top: 1px solid #e2e8f0;
+	font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+	font-size: 12px;
+	font-weight: 700;
+	text-transform: uppercase;
+	letter-spacing: 0.5px;
+	color: #4b5563;
+	border-bottom: 1px solid #e2e8f0;
+}
+
+/* First section header: no rule above — the surrounding margin provides separation */
+.ist-recent-records h3:first-child {
+	padding-top: 0;
+	border-top: none;
+}
+
+.ist-recent-records .ist-table {
+	margin-bottom: 24px;
+}
+
+.ist-recent-records .ist-empty {
+	margin: 10px 0 4px;
+}
+
+/* =========================================================================
+   Leaderboard section
+   ========================================================================= */
+
+.ist-leaderboard {
+	margin-top: 36px;
+	padding-top: 4px;
+}
+
+/* Section label: uppercase with readable contrast */
+.ist-leaderboard h3 {
+	margin: 0;
+	padding: 28px 0 10px;
+	border-top: 1px solid #e2e8f0;
+	font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+	font-size: 12px;
+	font-weight: 700;
+	text-transform: uppercase;
+	letter-spacing: 0.5px;
+	color: #4b5563;
+	border-bottom: 1px solid #e2e8f0;
+}
+
+/* First section header: no rule above — the section-divider above provides separation */
+.ist-leaderboard h3:first-child {
+	padding-top: 0;
+	border-top: none;
+}
+
+.ist-leaderboard-note {
+	font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+	font-size: 12px;
+	color: #6b7280;
+	margin: 8px 0 12px;
+	font-style: italic;
+}
+
+.ist-leaderboard-table .ist-rank {
+	width: 36px;
+	text-align: center;
+	font-weight: 700;
+	font-size: 12px;
+	color: #d1d5db;
+}
+
+/* Top-3 rank: warm tonal progression — gold / silver / bronze */
+.ist-leaderboard-table tbody tr:nth-child(1) .ist-rank { color: #d97706; }
+.ist-leaderboard-table tbody tr:nth-child(2) .ist-rank { color: #9ca3af; }
+.ist-leaderboard-table tbody tr:nth-child(3) .ist-rank { color: #b45309; }
+
+/* Table bottom gap: breathing room before the next section's top rule */
+.ist-leaderboard .ist-table {
+	margin-bottom: 24px;
+}
+
+.ist-leaderboard .ist-empty {
+	margin: 10px 0 4px;
+}
+
+/* =========================================================================
+   Shared table base
+   ========================================================================= */
+
+.ist-table {
+	width: 100%;
+	border-collapse: collapse;
+	font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+	font-size: 14px;
+	margin-bottom: 20px;
+}
+
+.ist-table th,
+.ist-table td {
+	padding: 10px 14px;
+	text-align: left;
+	border-bottom: 1px solid #f0f4f9;
+}
+
+.ist-table thead th {
+	font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+	font-weight: 600;
+	font-size: 11px;
+	text-transform: uppercase;
+	letter-spacing: 0.5px;
+	color: #9ca3af;
+	background: transparent;
+	border-bottom: 1px solid #e2e8f0;
+	padding-top: 8px;
+	padding-bottom: 8px;
+}
+
+.ist-table tbody tr:last-child td,
+.ist-table tbody tr:last-child th {
+	border-bottom: none;
+}
+
+.ist-table tbody tr:hover {
+	background: #f7f9fc;
+}
+
+.ist-empty {
+	font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+	color: #9ca3af;
+	font-style: italic;
+	font-size: 13px;
+	margin: 6px 0 20px;
+}
+
+/* =========================================================================
+   Form wrapper — card panel that contains all form content.
+   On standalone form pages this IS the visible background container.
+   In the modal, the modal panel provides the card; form-wrap is transparent.
+   ========================================================================= */
+
+.ist-form-wrap {
+	max-width: 560px;
+	font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+	background: #ffffff;
+	border: 1px solid #e2e8f0;
+	border-radius: 8px;
+	padding: 24px;
+}
+
+/* Modal: panel already provides the card treatment — strip form-wrap card styling */
+.ist-modal__body .ist-form-wrap {
+	max-width: 100%;
+	background: transparent;
+	border: none;
+	border-radius: 0;
+	padding: 0;
+}
+
+/* =========================================================================
+   Submitter identity line (replaces member dropdown in all three forms)
+   ========================================================================= */
+
+.ist-submitter-info {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	background: #e8f0fa;
+	border-radius: 6px;
+	padding: 10px 14px;
+	font-size: 14px;
+	color: #374151;
+	margin-bottom: 20px;
+}
+
+.ist-submitter-info strong {
+	color: #1e4e8c;
+}
+
+/* =========================================================================
+   Form fields
+   ========================================================================= */
+
+/* Form fills its container — form-wrap defines the width in both contexts */
+.ist-form {
+	max-width: 100%;
+}
+
+.ist-form p {
+	display: flex;
+	flex-direction: column;
+	gap: 5px;
+	margin-bottom: 18px;
+}
+
+.ist-form label {
+	font-weight: 600;
+	font-size: 14px;
+	font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+	color: #374151;
+}
+
+/* Standard field labels that contain a help icon — align text and icon on one line */
+.ist-form p > label {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+}
+
+.ist-form input[type="text"],
+.ist-form input[type="number"],
+.ist-form input[type="date"],
+.ist-form select,
+.ist-form textarea {
+	font-family: inherit;
+	border: 1px solid #d1d5db;
+	border-radius: 6px;
+	padding: 8px 11px;
+	font-size: 14px;
+	width: 100%;
+	box-sizing: border-box;
+	color: #1a1a1a;
+	background: #fff;
+	transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.ist-form input:focus,
+.ist-form select:focus,
+.ist-form textarea:focus {
+	outline: none;
+	border-color: #1e4e8c;
+	box-shadow: 0 0 0 3px rgba(30, 78, 140, 0.12);
+}
+
+/* =========================================================================
+   Fieldset — radio / checkbox groups
+   ========================================================================= */
+
+.ist-fieldset {
+	position: relative;
+	border: 1px solid #e2e8f0;
+	border-radius: 8px;
+	padding: 16px;
+	margin-top: 46px;
+	margin-bottom: 18px;
+	background: #fafbfc;
+	/* Override browser-default min-width: min-content so fieldsets don't overflow
+	   their container on narrow screens or inside the modal. */
+	min-width: 0;
+	width: 100%;
+	box-sizing: border-box;
+}
+
+.ist-fieldset legend {
+	position: absolute;
+	top: 0;
+	left: 0;
+	transform: translateY(-100%);
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	font-weight: 700;
+	font-size: 14px;
+	font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+	color: #374151;
+	padding: 0 6px 6px;
+}
+
+.ist-radio-group {
+	display: flex;
+	gap: 20px;
+	margin-bottom: 10px;
+	flex-wrap: wrap;
+}
+
+.ist-radio-group--stack,
+.ist-radio-group--stacked {
+	flex-direction: column;
+	gap: 10px;
+}
+
+.ist-radio-label {
+	display: inline-flex;
+	align-items: center;
+	gap: 7px;
+	font-size: 14px;
+	font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+	color: #374151;
+	cursor: pointer;
+}
+
+.ist-radio-label input[type="radio"] {
+	accent-color: #1e4e8c;
+	width: 16px;
+	height: 16px;
+	flex-shrink: 0;
+}
+
+.ist-field-hint {
+	font-size: 12px;
+	color: #6b7280;
+	margin: 4px 0 0;
+}
+
+/* Source / recipient panels — hidden until JS toggles .ist-visible */
+.ist-source-panel,
+.ist-recipient-panel {
+	display: none;
+	margin-top: 10px;
+}
+
+.ist-source-panel.ist-visible,
+.ist-recipient-panel.ist-visible {
+	display: block;
+}
+
+/* Stack labels/inputs inside panels */
+.ist-recipient-panel label {
+	display: block;
+	margin-bottom: 4px;
+}
+
+/* =========================================================================
+   Buttons
+   ========================================================================= */
+
+.ist-btn {
+	display: inline-block;
+	border: none;
+	border-radius: 6px;
+	padding: 10px 22px;
+	font-size: 14px;
+	font-weight: 600;
+	font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+	cursor: pointer;
+	line-height: 1.4;
+	transition: background 0.15s;
+}
+
+.ist-btn--primary {
+	background: #1e4e8c;
+	color: #fff;
+}
+
+.ist-btn--primary:hover,
+.ist-btn--primary:focus {
+	background: #163b6e;
+	color: #fff;
+}
+
+/* Legacy alias — existing templates use .ist-btn without --primary modifier */
+.ist-btn:not([class*="ist-btn--"]) {
+	background: #1e4e8c;
+	color: #fff;
+}
+
+.ist-btn:not([class*="ist-btn--"]):hover {
+	background: #163b6e;
+}
+
+/* =========================================================================
+   Admin list view: type tag (shared between admin + frontend assets)
+   ========================================================================= */
+
+.ist-tag {
+	display: inline-block;
+	font-size: 11px;
+	font-weight: 600;
+	padding: 2px 7px;
+	border-radius: 99px;
+	vertical-align: middle;
+	margin-left: 4px;
+}
+
+.ist-tag--other {
+	background: #f0f4f9;
+	color: #6b7280;
+}
+
+/* =========================================================================
+   Modal overlay
+   ========================================================================= */
+
+.ist-modal {
+	position: fixed;
+	inset: 0;
+	z-index: 99999;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: 16px;
+}
+
+/* When the hidden attribute is present, the flex layout must not show */
+.ist-modal[hidden] {
+	display: none !important;
+}
+
+.ist-modal__backdrop {
+	position: absolute;
+	inset: 0;
+	background: rgba(0, 0, 0, 0.52);
+}
+
+/*
+ * Panel: flex column so the close button strip stays fixed at the top while
+ * only .ist-modal__body scrolls. Prevents the close button from scrolling
+ * away when the form content is taller than the viewport.
+ */
+.ist-modal__panel {
+	position: relative;
+	background: #ffffff;
+	border-radius: 10px;
+	box-shadow: 0 8px 40px rgba(0, 0, 0, 0.2);
+	width: 100%;
+	max-width: 600px;
+	max-height: 90vh;
+	display: flex;
+	flex-direction: column;
+	overflow: hidden;
+}
+
+/* Close button: static in the flex column flow, aligned to the right */
+.ist-modal__close {
+	display: block;
+	align-self: flex-end;
+	flex-shrink: 0;
+	margin: 10px 12px 0;
+	background: none;
+	border: none;
+	font-size: 16px;
+	line-height: 1;
+	color: #6b7280;
+	cursor: pointer;
+	padding: 6px 9px;
+	border-radius: 4px;
+	transition: background 0.1s, color 0.1s;
+}
+
+.ist-modal__close:hover,
+.ist-modal__close:focus {
+	background: #f0f4f9;
+	color: #1a1a1a;
+}
+
+/* Body: takes remaining height, scrolls independently of the close button */
+.ist-modal__body {
+	flex: 1;
+	min-height: 0;
+	overflow-y: auto;
+	padding: 12px 32px 32px;
+	-webkit-overflow-scrolling: touch;
+}
+
+/* Success confirmation shown inline inside the modal after save */
+.ist-modal-notice {
+	margin-bottom: 16px;
+}
+
+/* =========================================================================
+   Charts — Chart.js canvas wrappers
+   ========================================================================= */
+
+.ist-chart-section {
+	margin: 28px 0;
+}
+
+.ist-chart-title {
+	font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+	font-size: 16px;
+	font-weight: 700;
+	letter-spacing: -0.1px;
+	color: #374151;
+	margin: 0 0 14px;
+	padding-bottom: 10px;
+	border-bottom: 1px solid #e2e8f0;
+}
+
+/* Default wrap: responsive; Chart.js sizes height via maintainAspectRatio */
+.ist-chart-wrap {
+	position: relative;
+	width: 100%;
+	min-height: 180px; /* Guard against collapsed container on slow load */
+}
+
+/* Horizontal-bar wrap: explicit height set inline per chart based on row count */
+.ist-chart-wrap--hbar {
+	position: relative;
+	width: 100%;
+	min-height: 120px;
+	/* Inline style="height:Xpx" overrides min-height once row count is known */
+}
+
+/* Small muted footnote below charts — used for MTD qualifier */
+.ist-chart-note {
+	font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+	font-size: 12px;
+	color: #6b7280;
+	margin: 8px 0 24px;
+	font-style: italic;
+}
+
+/* =========================================================================
+   Section divider — visual break between reporting sub-sections
+   ========================================================================= */
+
+.ist-section-divider {
+	margin: 32px 0 16px;
+	border-top: 1px solid #e2e8f0;
+	padding-top: 20px;
+}
+
+.ist-section-divider__label {
+	margin: 0;
+	font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+	font-size: 12px;
+	font-weight: 700;
+	text-transform: uppercase;
+	letter-spacing: 0.6px;
+	color: #6b7280;
+}
+
+/* =========================================================================
+   YTD comparison cards — 3-column grid
+   ========================================================================= */
+
+.ist-ytd-grid {
+	display: grid;
+	grid-template-columns: repeat(3, 1fr);
+	gap: 12px;
+	margin-bottom: 28px;
+}
+
+.ist-ytd-card {
+	background: #f7f9fc;
+	border: 1px solid #e2e8f0;
+	border-top: 3px solid #1e4e8c;
+	border-radius: 8px;
+	padding: 14px 16px;
+}
+
+.ist-ytd-card__label {
+	font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+	font-size: 11px;
+	font-weight: 700;
+	text-transform: uppercase;
+	letter-spacing: 0.6px;
+	color: #6b7280;
+	margin-bottom: 12px;
+}
+
+.ist-ytd-card__row {
+	display: flex;
+	align-items: baseline;
+	justify-content: space-between;
+	gap: 8px;
+	margin-bottom: 4px;
+}
+
+.ist-ytd-card__value {
+	font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+	font-size: 18px;
+	font-weight: 700;
+	color: #1e4e8c;
+	line-height: 1;
+	white-space: nowrap;
+}
+
+/* Prior row: secondary, smaller value */
+.ist-ytd-card__row--prior .ist-ytd-card__value {
+	font-size: 15px;
+	font-weight: 600;
+	color: #374151;
+}
+
+.ist-ytd-card__period {
+	font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+	font-size: 10px;
+	font-weight: 500;
+	color: #9ca3af;
+	white-space: nowrap;
+	text-align: right;
+}
+
+.ist-ytd-card__delta {
+	margin-top: 10px;
+	padding-top: 8px;
+	border-top: 1px solid #e2e8f0;
+	font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+	font-size: 12px;
+	font-weight: 600;
+}
+
+.ist-ytd-card__delta--up {
+	color: #166534;
+}
+
+.ist-ytd-card__delta--down {
+	color: #991b1b;
+}
+
+.ist-ytd-card__delta--neutral {
+	color: #6b7280;
+}
+
+/* =========================================================================
+   Responsive overrides
+   ========================================================================= */
+
+@media ( max-width: 480px ) {
+
+	/* KPI grid: single column on narrow viewports */
+	.ist-kpi-grid {
+		grid-template-columns: 1fr;
+		gap: 10px;
+	}
+
+	/* KPI card values: stack FY and month vertically rather than side-by-side */
+	.ist-kpi-card__values {
+		flex-direction: column;
+		align-items: flex-start;
+		gap: 8px;
+	}
+
+	.ist-kpi-card__value--month {
+		border-left: none;
+		margin-left: 0;
+		padding-left: 0;
+		border-top: 1px solid #e2e8f0;
+		padding-top: 8px;
+	}
+
+	/* Page header: stack title and actions vertically */
+	.ist-page-header {
+		flex-direction: column;
+		align-items: flex-start;
+	}
+
+	/* Chart wrap: relax min-height on small screens */
+	.ist-chart-wrap {
+		min-height: 140px;
+	}
+
+	/* YTD comparison: single column on narrow viewports */
+	.ist-ytd-grid {
+		grid-template-columns: 1fr;
+	}
+
+	/* YTD card row: stack value and period label vertically */
+	.ist-ytd-card__row {
+		flex-direction: column;
+		align-items: flex-start;
+		gap: 2px;
+	}
+
+	.ist-ytd-card__period {
+		text-align: left;
+	}
+
+}
+
+/* =========================================================================
+   Conditional form sections (shown/hidden by JS)
+   ========================================================================= */
+
+.ist-conditional-section {
+	display: none;
+	margin-bottom: 4px;
+}
+
+.ist-conditional-section.ist-visible {
+	display: block;
+}
+
+/* =========================================================================
+   Field help icons (.ist-help-icon)
+   Inline SVG info-circle button. Matches the icon style used in the
+   INC Meeting Roles Scheduler plugin (.inc-mrs-role-instructions-btn).
+   No border, no background — icon-only, muted by default, INC blue on hover.
+   ========================================================================= */
+
+.ist-help-icon {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	flex-shrink: 0;
+	width: 18px;
+	height: 18px;
+	padding: 2px;
+	margin: 0;
+	background: none;
+	border: 0;
+	box-shadow: none;
+	color: #9ca3af;
+	cursor: pointer;
+	border-radius: 3px;
+	font-size: 0;
+	line-height: 0;
+	vertical-align: middle;
+	transition: color 0.15s;
+}
+
+/* BuddyBoss / theme override guard — prevent platform button resets from
+   adding borders, backgrounds, or min-size constraints to the icon button. */
+#buddypress .ist-help-icon,
+.bp-nouveau .ist-help-icon,
+.buddypress .ist-help-icon {
+	width: 18px !important;
+	height: 18px !important;
+	padding: 2px !important;
+	background: none !important;
+	border: 0 !important;
+	box-shadow: none !important;
+	min-width: 0 !important;
+	min-height: 0 !important;
+	line-height: 0 !important;
+}
+
+.ist-help-icon:hover,
+.ist-help-icon:focus {
+	background: none;
+	border: 0;
+	box-shadow: none;
+	color: #1e4e8c;
+	outline: none;
+}
+
+.ist-help-icon:focus-visible {
+	outline: 2px solid #1e4e8c;
+	outline-offset: 2px;
+}
+
+/* Suppress the :focus outline in browsers that support :focus-visible,
+   keeping keyboard accessibility without the always-on focus ring. */
+.ist-help-icon:focus:not(:focus-visible) {
+	outline: none;
+}
+
+/* =========================================================================
+   Field help popup (#ist-field-help / .ist-help-popup)
+   Appended to document.body by JS so it renders above all modal stacks.
+   ========================================================================= */
+
+.ist-help-popup {
+	position: fixed;
+	z-index: 99999;
+	width: 300px;
+	max-width: calc(100vw - 16px);
+	max-height: 320px;
+	display: flex;
+	flex-direction: column;
+	overflow: hidden;
+	background: #fff;
+	border: 1px solid #e2e8f0;
+	border-radius: 8px;
+	box-shadow: 0 8px 24px rgba(0, 0, 0, 0.14);
+	font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+.ist-help-popup[hidden] {
+	display: none;
+}
+
+.ist-help-popup__header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 10px 12px 8px;
+	border-bottom: 1px solid #e2e8f0;
+}
+
+.ist-help-popup__title {
+	font-size: 13px;
+	font-weight: 700;
+	color: #1a1a1a;
+}
+
+.ist-help-popup__close {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 20px;
+	height: 20px;
+	padding: 0;
+	border: none;
+	background: transparent;
+	color: #6b7280;
+	font-size: 16px;
+	line-height: 1;
+	cursor: pointer;
+	border-radius: 4px;
+}
+
+.ist-help-popup__close:hover,
+.ist-help-popup__close:focus {
+	background: #f0f4f9;
+	color: #1a1a1a;
+	outline: none;
+}
+
+.ist-help-popup__body {
+	padding: 10px 12px 12px;
+	flex: 1;
+	min-height: 0;
+	overflow-y: auto;
+}
+
+.ist-help-popup__body p {
+	margin: 0 0 8px;
+	font-size: 13px;
+	color: #374151;
+	line-height: 1.5;
+}
+
+.ist-help-popup__body p:last-child {
+	margin-bottom: 0;
+}
+
+/* =========================================================================
+   Optional label helpers
+   ========================================================================= */
+
+.ist-label-optional,
+.ist-legend-optional {
+	font-size: 12px;
+	font-weight: 400;
+	color: #9ca3af;
+	margin-left: 4px;
+}
+
+/* =========================================================================
+   Closed Business Attribution — cross-era rollup chips
+   ========================================================================= */
+
+.ist-coverage-note {
+	font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+	font-size: 13px;
+	color: #6b7280;
+	margin: 0 0 20px;
+	line-height: 1.5;
+}
+
+.ist-rollup-chips {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 12px;
+	margin-bottom: 28px;
+}
+
+.ist-rollup-chip {
+	flex: 1 1 140px;
+	background: #f7f9fc;
+	border: 1px solid #e2e8f0;
+	border-top-width: 3px;
+	border-radius: 8px;
+	padding: 14px 16px;
+}
+
+.ist-rollup-chip--referral  { border-top-color: #1e4e8c; }
+.ist-rollup-chip--non-referral { border-top-color: #6b9fd4; }
+.ist-rollup-chip--unknown   { border-top-color: #d1d5db; }
+
+.ist-rollup-chip__label {
+	margin: 0 0 6px;
+	font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+	font-size: 11px;
+	font-weight: 700;
+	text-transform: uppercase;
+	letter-spacing: 0.6px;
+	color: #6b7280;
+}
+
+.ist-rollup-chip__amount {
+	margin: 0 0 2px;
+	font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+	font-size: 22px;
+	font-weight: 700;
+	color: #111827;
+}
+
+.ist-rollup-chip__count {
+	margin: 0;
+	font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+	font-size: 12px;
+	color: #9ca3af;
+}
+
+/* =========================================================================
+   Closed Business Attribution — enhanced-only section labels
+   ========================================================================= */
+
+.ist-enhanced-badge {
+	display: inline-block;
+	margin-left: 8px;
+	padding: 2px 7px;
+	font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+	font-size: 10px;
+	font-weight: 700;
+	text-transform: uppercase;
+	letter-spacing: 0.5px;
+	color: #1e4e8c;
+	background: rgba(30, 78, 140, 0.08);
+	border: 1px solid rgba(30, 78, 140, 0.18);
+	border-radius: 4px;
+	vertical-align: middle;
+}
+
+.ist-enhanced-intro {
+	font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+	font-size: 13px;
+	color: #6b7280;
+	margin: 0 0 20px;
+	line-height: 1.5;
+}
+
+@media (max-width: 480px) {
+	.ist-rollup-chips {
+		flex-direction: column;
+	}
+	.ist-rollup-chip {
+		flex: none;
+	}
+}
