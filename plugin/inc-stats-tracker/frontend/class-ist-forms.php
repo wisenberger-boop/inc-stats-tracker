@@ -43,6 +43,33 @@ class IST_Forms {
 	}
 
 	/**
+	 * Handle member-facing TYFCB edit submission.
+	 */
+	public function handle_update_tyfcb(): void {
+		$record_id = absint( $_POST['record_id'] ?? 0 ); // phpcs:ignore WordPress.Security.NonceVerification
+		$this->verify_nonce( 'ist_update_tyfcb_' . $record_id );
+		$this->require_login();
+
+		if ( ! $record_id ) {
+			$this->redirect_after_update(
+				new WP_Error( 'ist_missing_record', __( 'Closed business record not found.', 'inc-stats-tracker' ) )
+			);
+		}
+
+		$input = $_POST; // phpcs:ignore WordPress.Security.NonceVerification
+
+		$date_check = $this->check_entry_date( $input );
+		if ( is_wp_error( $date_check ) ) {
+			$this->redirect_after_update( $date_check );
+		}
+
+		$service = new IST_Service_TYFCB();
+		$result  = $service->update_from_input( $record_id, $input, get_current_user_id() );
+
+		$this->redirect_after_update( $result );
+	}
+
+	/**
 	 * Handle referral form submission (logged-in users only).
 	 */
 	public function handle_referral(): void {
@@ -216,6 +243,27 @@ class IST_Forms {
 			) );
 		} else {
 			wp_safe_redirect( add_query_arg( 'ist_saved', '1', $redirect ) );
+		}
+		exit;
+	}
+
+	/**
+	 * Redirect after a member-facing record update.
+	 *
+	 * @param int|WP_Error $result
+	 */
+	private function redirect_after_update( int|WP_Error $result ): void {
+		$redirect = wp_get_referer() ?: home_url();
+		$redirect = remove_query_arg( array( 'ist_saved', 'ist_updated', 'ist_error' ), $redirect );
+
+		if ( is_wp_error( $result ) ) {
+			wp_safe_redirect( add_query_arg(
+				'ist_error',
+				rawurlencode( $result->get_error_message() ),
+				$redirect
+			) );
+		} else {
+			wp_safe_redirect( add_query_arg( 'ist_updated', '1', $redirect ) );
 		}
 		exit;
 	}

@@ -28,11 +28,13 @@ add_action( 'wp_enqueue_scripts',    array( $ist_frontend, 'enqueue_assets' ) );
 // Form submission hooks — logged-in users.
 $ist_forms = new IST_Forms();
 add_action( 'admin_post_ist_submit_tyfcb',    array( $ist_forms, 'handle_tyfcb' ) );
+add_action( 'admin_post_ist_update_tyfcb',    array( $ist_forms, 'handle_update_tyfcb' ) );
 add_action( 'admin_post_ist_submit_referral', array( $ist_forms, 'handle_referral' ) );
 add_action( 'admin_post_ist_submit_connect',  array( $ist_forms, 'handle_connect' ) );
 
 // Form submission hooks — non-logged-in users (redirect to login).
 add_action( 'admin_post_nopriv_ist_submit_tyfcb',    array( $ist_forms, 'handle_nopriv' ) );
+add_action( 'admin_post_nopriv_ist_update_tyfcb',    array( $ist_forms, 'handle_nopriv' ) );
 add_action( 'admin_post_nopriv_ist_submit_referral', array( $ist_forms, 'handle_nopriv' ) );
 add_action( 'admin_post_nopriv_ist_submit_connect',  array( $ist_forms, 'handle_nopriv' ) );
 

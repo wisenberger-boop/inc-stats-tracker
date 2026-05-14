@@ -4,7 +4,7 @@ Tags: stats, reporting, buddyboss, community, membership
 Requires at least: 6.0
 Tested up to: 6.8
 Requires PHP: 8.0
-Stable tag: 1.0.1-rc1
+Stable tag: 1.0.5
 License: Proprietary
 License URI: https://axisweb.com
 
@@ -99,6 +99,30 @@ Tables are created on activation and updated safely on plugin upgrade via `dbDel
 
 == Changelog ==
 
+= 1.0.5 =
+My Stats closed business history display update. No database schema changes.
+
+* Added Client / Payer Name as a visible column in the Closed Business submission history row summary.
+* Adjusted the history row layout for the added column across desktop and mobile widths.
+
+= 1.0.4 =
+My Stats closed business history/edit release. No database schema changes.
+
+* Added a My Stats section listing the logged-in member's Closed Business submissions from the start of the current fiscal year through today.
+* Added expandable member edit forms for Closed Business submissions, protected by per-record nonces, login checks, future-date validation, and ownership checks.
+* Editable fields include date, amount, business type, client / payer, attribution details, referrer details, lineage, attribution notes, and general note.
+
+= 1.0.3 =
+Reporting and tooling release. No database schema changes.
+
+* Group Stats totals, trend charts, FY monthly charts, and YTD comparison now include all records within the reporting window regardless of current group membership. Leaderboards continue to reflect the current active roster only.
+* Fixed FY monthly chart month labels displaying one calendar month too early (UTC round-trip bug with strtotime on Y-m-01 strings on UTC-minus deployments).
+* Fixed Closed Business MTD label showing the prior month instead of the current month (same UTC round-trip root cause).
+* Packaging: replaced Compress-Archive with a .NET ZipArchive-based script to fix forward-slash entry name normalization required for correct WordPress plugin installation on Linux servers.
+
+= 1.0.2-rc1 =
+Bugfix: 3-month trend charts showed a duplicate month instead of February on month-end dates. Root cause was strtotime month subtraction overflow; fixed by anchoring to the 1st of the current month before subtracting.
+
 = 1.0.1-rc1 =
 Post-launch admin hardening release.
 
@@ -126,6 +150,18 @@ Initial production release candidate. See full development history in CHANGELOG.
 * Custom capability registration on activation; cleanup on deactivation.
 
 == Upgrade Notice ==
+
+= 1.0.5 =
+No database schema changes. Safe to deploy over any 1.0.4 installation without deactivation.
+
+= 1.0.4 =
+No database schema changes. Safe to deploy over any 1.0.3 installation without deactivation.
+
+= 1.0.3 =
+No database schema changes. Safe to deploy over any 1.0.2-rc1 installation without deactivation.
+
+= 1.0.2-rc1 =
+Bugfix release. No database schema changes. Safe to deploy over any 1.0.1-rc1 installation without deactivation.
 
 = 1.0.1-rc1 =
 Admin hardening release. No database schema changes. Safe to deploy over any 1.0.0-rc.1 installation without deactivation.

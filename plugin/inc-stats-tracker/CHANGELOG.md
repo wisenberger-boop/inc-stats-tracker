@@ -10,9 +10,107 @@ Versions follow [Semantic Versioning](https://semver.org/).
 
 The following items are identified for the next release cycle but are not yet implemented.
 
-- **Edit record support** — inline or page-based editing for TYFCB, Referral, and Connect records to correct member mistakes without deleting and re-entering.
+- **Edit record support for Referrals and Connects** — inline or page-based editing to correct member mistakes without deleting and re-entering.
 - **Bulk delete / batch utilities** — select and delete multiple records at once from the admin list pages, with appropriate capability and confirmation guards.
 - **Admin notice for imported-row deletion** — a visible warning in the admin list when an admin attempts to delete a row tagged `data_source = 'import'`, clarifying that the row will not be re-imported unless the import hash is also cleared.
+
+---
+
+## [1.0.5] — 2026-05-14
+
+### Changed — My Stats closed business history
+
+- Added Client / Payer Name as a visible column in the Closed Business submission history row summary.
+- Adjusted the history row layout so date, attribution source, payer, amount, and edit action remain readable across desktop and mobile widths.
+
+No database schema changes.
+
+---
+
+## [1.0.4] — 2026-05-14
+
+### Added — My Stats closed business history and member edits
+
+- Added a new My Stats section listing the logged-in member's Closed Business / TYFCB submissions from the start of the current fiscal year through today.
+- Each row expands into an edit form so members can correct incorrect closed business data without deleting and re-entering the submission.
+- Member edits are handled through `admin-post.php` with per-record nonces, login checks, future-date validation, and an ownership guard that only allows editing records where `submitted_by_user_id` matches the current user.
+- Editable fields include business date, amount, business type, client / payer name, attribution source, revenue relationship type, original referrer fields, referral lineage, attribution notes, and the general note.
+- Added responsive frontend styling for the new history/edit section.
+
+No database schema changes.
+
+---
+
+## [1.0.3] — 2026-04-02
+
+### Changed — Closed Business (Amount) KPI card: clearer labels + prior FY YTD comparison
+
+**Group Stats and My Stats KPI cards for Closed Business (Amount) now show three values:**
+
+- **Current FY YTD** (was "FY 2025–26", now "FY 2025–26 YTD") — amount from FY start through today. Label change only; the date window was already correct.
+- **Prior FY YTD** (new) — same-elapsed-point amount from the prior fiscal year (e.g. Jul 2024 – Mar 2025 when today is Mar 31 2026). Data sourced from the existing `$ytd_data['prior']['tyfcb_amount']` already computed by both controllers.
+- **Current Month to Date** (was "March 2026", now "March 2026 (MTD)") — amount from the 1st of this month through today. Label change only; the date window was already correct.
+
+**Files changed:** `tmpl-kpi-row.php` (optional `$prior_value` / `$prior_label` slot added — renders only when provided, no effect on other KPI cards), `tmpl-group-stats-reports.php`, `tmpl-profile-my-stats.php`. No controller or query changes.
+
+---
+
+### Changed — Group Stats: group-level aggregates now include all historical records within the reporting window
+
+**Group Stats totals, trend charts, FY monthly charts, YTD comparison, and attribution reporting now include all records within the reporting date window**, regardless of current BuddyBoss group membership. Leaderboards continue to reflect the current active roster only.
+
+**Background:** The original implementation passed the current BuddyBoss group member IDs array (`$user_ids`) to every group-level query. This caused group aggregate totals to shrink retroactively as the roster changed: records from members who had since left the group, and imported historical rows where `submitted_by_user_id = 0` (unresolved member-mapping at import time), were silently excluded. The practical effect was that the plugin's FY YTD Closed Business total was lower than expected for a full-history group view.
+
+**Fix in `class-ist-group-extension.php`:** `$user_ids` (single array, used for all queries) was replaced by two distinct variables:
+
+- `$all_user_ids = array()` — passed to all group aggregate queries (totals, trends, YTD comparison, attribution). An empty array causes `IST_Stats_Query` methods to omit the `submitted_by_user_id IN (...)` clause, including every record in the date window regardless of who submitted it.
+- `$roster_user_ids` — the current BuddyBoss group member ID list. Passed only to the three leaderboard queries, which rank active members and should reflect current membership.
+
+**Scope:** Group Stats tab only (`IST_Group_Extension::display()`). My Stats (member profile tab) is scoped to the individual user by design and is unaffected.
+
+**See also:** `docs/implementation-notes.md` — FY YTD baseline discrepancy investigation and the decision to accept the plugin's current total as the authoritative baseline going forward.
+
+---
+
+### Fixed — Reporting: FY monthly chart label offset and MTD label wrong-month regression
+
+Two PHP timezone-related label display bugs were present and are now fixed:
+
+**FY monthly chart label offset** (`fy_monthly_trend()` in `class-ist-stats-query.php`): Month labels displayed one calendar month too early (e.g., a February data bucket was labeled "January"). The label line used `wp_date('M Y', strtotime($start))` where `$start` is a `Y-m-01` string. `strtotime('2026-02-01')` produces UTC midnight of February 1; on UTC-minus deployments `wp_date()` converts that back to January 31 local time, shifting every label one month backward. Fixed by replacing the `strtotime()` call with `mktime(12, 0, 0, $month, 15, $year)` — noon UTC on the 15th of the month falls in the correct calendar month for all UTC-minus deployments.
+
+**MTD label wrong-month** (`tmpl-group-stats-reports.php`, `tmpl-profile-my-stats.php`): `$month_label` was built as `wp_date('F Y', strtotime($month_start))` where `$month_start = wp_date('Y-m-01')`. On April 1, 2026 this chain produces `strtotime('2026-04-01')` → UTC midnight April 1 → March 31 local → "March 2026 (MTD)" instead of "April 2026 (MTD)". Fixed by using `wp_date('F Y')` with no timestamp argument, which resolves against the current local time directly without any UTC round-trip.
+
+**Root cause pattern (shared):** Any call to `strtotime()` on a `Y-m-01` or `Y-m-d` string followed by `wp_date()` is subject to a UTC-midnight to local-time shift on UTC-minus sites. All remaining date-arithmetic code in `three_month_trend()` and `fy_monthly_trend()` uses `new DateTime($string)` / `DateTime::modify()` / `DateTime::format()` for window boundaries, and `mktime(12, 0, 0, $m, 15, $y)` only where a timestamp is needed for display labels. This pattern is safe across all UTC offsets.
+
+---
+
+### Developer Tooling — Packaging workflow overhaul and project structure clarification
+
+**ZIP backslash separator bug (now fixed):** `Compress-Archive` (PowerShell 5.1) writes backslash characters as path separators in ZIP entry names. PHP's `ZipArchive::extractTo()` on Linux extracts such entries as flat files with backslash-containing names instead of building the correct directory hierarchy. WordPress could not locate the plugin's main PHP file after installation and activation failed with "The plugin file does not exist." This was a silent production blocker — the ZIP passed all local Windows tests but failed on the Linux server.
+
+**Fix:** Added `tools/package-plugin.ps1` — a committed PowerShell script that invokes .NET's `[System.IO.Compression.ZipArchive]` directly. Every entry name is explicitly normalized to forward slashes (`.Replace('\', '/')`). The script wraps all ZIP operations in `try/catch/finally` to ensure `$zip.Dispose()` (which writes the end-of-central-directory record) always executes even if an error occurs mid-archive. `tools/package-plugin.bat` now calls this committed script rather than generating a temporary PS1 at runtime, making the build process auditable and version-controlled.
+
+**Project structure:** `package-plugin.bat` encodes the constraint that only `plugin/inc-stats-tracker/` is shippable. The batch script includes a pre-build safety check that aborts if any `.csv` files are present in `plugin/inc-stats-tracker/docs/source-assets/csv/` — the runtime staging folder for historical import source files that must never ship to production.
+
+**Release checklist:** Added `project-management/checklists/plugin-release-checklist.md` — a reusable pre/post-release checklist covering version string alignment, folder hygiene, ZIP verification, WordPress activation validation, and post-deployment checks.
+
+---
+
+## [1.0.2-rc1] — 2026-03-31
+
+### Fixed — 3-month trend: month-end date overflow + current-month isolation
+
+**Root cause (overflow):** `IST_Stats_Query::three_month_trend()` called `strtotime("-{$offset} months", strtotime($today))` using the raw date string as the subtraction anchor. On any date at or near the end of a 31-day month (e.g. March 31), subtracting one month produces a date like "February 31" which PHP normalises forward into March. The result: the offset=1 bucket resolved to March 1–31 instead of February 1–28, producing two "Mar" buckets and no February bucket at all.
+
+**Root cause (FY chart regression):** After the overflow fix was applied, anchoring to "1st of current month" still left the offset=0 bucket as a partial current-month window (`end = $today`). If a caller tried to enforce "completed months only" by passing a prior month's date as `$today`, that same date was also forwarded to `fy_monthly_trend()` — which uses `$today` to set the current-month end. This caused the FY monthly charts to stop at the prior month and drop the current month entirely.
+
+**Fix in `class-ist-stats-query.php`:**
+
+- `three_month_trend()`: anchor changes from "1st of current month" to "1st of the *previous* month". All three buckets now always use `wp_date('Y-m-t')` (full month-end) — there is no current-month partial window. The function always shows 3 fully completed calendar months regardless of what day of the month it is called. "Completed months only" behavior is now self-contained here; callers must always pass the real current date.
+
+- `fy_monthly_trend()`: no code change. The function correctly includes the current month-to-date (`end = $today`) when the cursor reaches the current month. Both controllers already pass `$today = wp_date('Y-m-d')` (the real current date); the FY regression was caused by callers passing a stale date, which this fix prevents by design.
+
+**Scope:** `three_month_trend()` is the single shared method called by both My Stats and INC Stats Reports (Group Stats). Both views are corrected by this one change.
 
 ---
 

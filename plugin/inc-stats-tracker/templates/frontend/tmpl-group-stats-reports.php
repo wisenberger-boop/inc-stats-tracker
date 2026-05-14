@@ -36,8 +36,10 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-$month_label = wp_date( 'F Y', strtotime( $month_start ) );
-$atts        = $atts ?? array();
+$month_label     = wp_date( 'F Y' ) . __( ' (MTD)', 'inc-stats-tracker' );
+$fy_ytd_label    = $fy_label . __( ' YTD', 'inc-stats-tracker' );
+$prior_ytd_label = $prior_fy_label . __( ' YTD', 'inc-stats-tracker' );
+$atts            = $atts ?? array();
 ?>
 <div class="ist-group-stats-reports">
 
@@ -75,12 +77,14 @@ $atts        = $atts ?? array();
 	<div class="ist-kpi-grid">
 		<?php
 		ist_get_template( 'frontend/partials/tmpl-kpi-row.php', array(
-			'label'       => __( 'Closed Business (Amount)', 'inc-stats-tracker' ),
-			'month_value' => $tyfcb_month['amount'],
-			'fy_value'    => $tyfcb_fy['amount'],
-			'format'      => 'currency',
-			'fy_label'    => $fy_label,
-			'month_label' => $month_label,
+			'label'        => __( 'Closed Business (Amount)', 'inc-stats-tracker' ),
+			'month_value'  => $tyfcb_month['amount'],
+			'fy_value'     => $tyfcb_fy['amount'],
+			'format'       => 'currency',
+			'fy_label'     => $fy_ytd_label,
+			'month_label'  => $month_label,
+			'prior_value'  => $ytd_data['prior']['tyfcb_amount'],
+			'prior_label'  => $prior_ytd_label,
 		) );
 		ist_get_template( 'frontend/partials/tmpl-kpi-row.php', array(
 			'label'       => __( 'Closed Business (Count)', 'inc-stats-tracker' ),

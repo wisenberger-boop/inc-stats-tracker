@@ -15,6 +15,7 @@
  *   $tyfcb_recent    array     Recent TYFCB rows
  *   $referral_recent array     Recent referral rows
  *   $connect_recent  array     Recent connect rows
+ *   $tyfcb_history   array     Current FY-to-date TYFCB rows for this user
  *   $trend_data      array     3-month trend data from IST_Stats_Query::three_month_trend().
  *                              Each item: { label, tyfcb_amount, ref_count, con_count }
  *   $tyfcb_rollup      array     From IST_Stats_Query::tyfcb_attribution_rollup() — FY scope.
@@ -35,12 +36,28 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-$month_label = wp_date( 'F Y', strtotime( $month_start ) );
-$atts        = array(); // Shortcode atts not applicable on profile nav pages.
+$month_label     = wp_date( 'F Y' ) . __( ' (MTD)', 'inc-stats-tracker' );
+$fy_ytd_label    = $fy_label . __( ' YTD', 'inc-stats-tracker' );
+$prior_ytd_label = $prior_fy_label . __( ' YTD', 'inc-stats-tracker' );
+$atts            = array(); // Shortcode atts not applicable on profile nav pages.
+$updated         = isset( $_GET['ist_updated'] ) && '1' === $_GET['ist_updated']; // phpcs:ignore WordPress.Security.NonceVerification
+$error           = isset( $_GET['ist_error'] ) ? sanitize_text_field( wp_unslash( $_GET['ist_error'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification
 ?>
 <div class="ist-my-stats">
 
 	<h2><?php esc_html_e( 'My Stats', 'inc-stats-tracker' ); ?></h2>
+
+	<?php if ( $updated ) : ?>
+		<div class="ist-notice ist-notice--success" role="alert">
+			<?php esc_html_e( 'Closed business submission updated successfully.', 'inc-stats-tracker' ); ?>
+		</div>
+	<?php endif; ?>
+
+	<?php if ( $error ) : ?>
+		<div class="ist-notice ist-notice--error" role="alert">
+			<?php echo esc_html( urldecode( $error ) ); ?>
+		</div>
+	<?php endif; ?>
 
 	<?php /* ----------------------------------------------------------------
 	   KPI Metric Cards — 2-column grid, FY value primary / month secondary
@@ -52,8 +69,10 @@ $atts        = array(); // Shortcode atts not applicable on profile nav pages.
 			'month_value' => $tyfcb_month['amount'],
 			'fy_value'    => $tyfcb_fy['amount'],
 			'format'      => 'currency',
-			'fy_label'    => $fy_label,
+			'fy_label'    => $fy_ytd_label,
 			'month_label' => $month_label,
+			'prior_value' => $ytd_data['prior']['tyfcb_amount'],
+			'prior_label' => $prior_ytd_label,
 		) );
 		ist_get_template( 'frontend/partials/tmpl-kpi-row.php', array(
 			'label'       => __( 'Closed Business (Count)', 'inc-stats-tracker' ),
@@ -228,6 +247,13 @@ $atts        = array(); // Shortcode atts not applicable on profile nav pages.
 		'attr_rel_type' => $tyfcb_by_rel,
 		'attr_referrer' => $tyfcb_by_referrer,
 		'fy_label'      => $fy_label,
+	) ); ?>
+
+	<?php /* ----------------------------------------------------------------
+	   Current FY Closed Business History + Edit
+	   --------------------------------------------------------------- */ ?>
+	<?php ist_get_template( 'frontend/partials/tmpl-tyfcb-history.php', compact(
+		'tyfcb_history', 'group_members', 'fy_label'
 	) ); ?>
 
 	<?php /* ----------------------------------------------------------------

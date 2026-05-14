@@ -141,11 +141,44 @@ class IST_Stats_Query {
 	public static function three_month_trend( string $today, array $user_ids = array() ): array {
 		$buckets = array();
 
+		// Anchor to the 1st of the PREVIOUS calendar month so all 3 buckets are
+		// fully completed months:
+		//   offset=0 → last complete month   (e.g. Mar when today is in Apr)
+		//   offset=1 → two months ago        (Feb)
+		//   offset=2 → three months ago      (Jan)
+		//
+		// IMPORTANT — avoid all strtotime()/wp_date() round-trips for date math.
+		// WordPress sets PHP's default timezone to UTC. strtotime('2026-03-01')
+		// produces a UTC midnight timestamp. wp_date() then converts that UTC
+		// midnight back to the site timezone (e.g. UTC-5), landing on the previous
+		// calendar day (Feb 28 at 7 PM), so 'Y-m-01' returns February 1 instead of
+		// March 1. This shifts every bucket one month too early regardless of what
+		// the anchor DateTime correctly contains.
+		//
+		// Fix: derive start/end strings from DateTime::format() directly (no UTC
+		// round-trip). For the display label, use mktime() at noon on the 15th of
+		// the target month — noon UTC on the 15th stays within the same month on
+		// any timezone from UTC-12 to UTC+14, so wp_date() returns the correct name.
+		$anchor_dt = new DateTime( $today );
+		$anchor_dt->modify( 'first day of this month' );
+		$anchor_dt->modify( '-1 month' );
+
 		for ( $offset = 2; $offset >= 0; $offset-- ) {
-			$month_ts = strtotime( "-{$offset} months", strtotime( $today ) );
-			$start    = wp_date( 'Y-m-01', $month_ts );
-			$end      = ( 0 === $offset ) ? $today : wp_date( 'Y-m-t', $month_ts );
-			$label    = wp_date( 'M Y', $month_ts );
+			$month_dt = clone $anchor_dt;
+			$month_dt->modify( "-{$offset} months" );
+
+			$year  = (int) $month_dt->format( 'Y' );
+			$month = (int) $month_dt->format( 'n' );
+
+			$start = sprintf( '%04d-%02d-01', $year, $month );
+
+			$end_dt = clone $month_dt;
+			$end_dt->modify( 'last day of this month' );
+			$end = $end_dt->format( 'Y-m-d' );
+
+			// mktime() uses PHP's default timezone (UTC in WordPress).
+			// Noon UTC on the 15th converts correctly in all site timezones.
+			$label = wp_date( 'M Y', mktime( 12, 0, 0, $month, 15, $year ) );
 
 			$tyfcb = self::tyfcb_totals( $start, $end, $user_ids );
 			$refs  = self::referral_totals( $start, $end, $user_ids );
@@ -211,7 +244,15 @@ class IST_Stats_Query {
 				$end = $end_dt->format( 'Y-m-d' );
 			}
 
-			$label = wp_date( 'M Y', strtotime( $start ) );
+			// Do not use wp_date('M Y', strtotime($start)) — strtotime() parses
+			// $start as UTC midnight, and wp_date() converts UTC midnight back to
+			// site local time (e.g. UTC-5), landing on the previous calendar day.
+			// '2026-02-01' UTC midnight → Jan 31 local → label reads "Jan" instead
+			// of "Feb". Use noon UTC on the 15th: stays within the same calendar
+			// month in any timezone from UTC-12 to UTC+14.
+			$_lbl_year  = (int) $cursor->format( 'Y' );
+			$_lbl_month = (int) $cursor->format( 'n' );
+			$label      = wp_date( 'M Y', mktime( 12, 0, 0, $_lbl_month, 15, $_lbl_year ) );
 
 			$tyfcb = self::tyfcb_totals( $start, $end, $user_ids );
 			$refs  = self::referral_totals( $start, $end, $user_ids );
@@ -861,6 +902,31 @@ class IST_Stats_Query {
 			 LIMIT %d",
 			$user_id,
 			max( 1, $limit )
+		) ) ?: array(); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+	}
+
+	/**
+	 * Closed business records submitted by a specific user in a date range.
+	 *
+	 * Used by the member-facing My Stats history/edit section.
+	 *
+	 * @param int    $user_id
+	 * @param string $date_start Y-m-d inclusive start.
+	 * @param string $date_end   Y-m-d inclusive end.
+	 * @return array Raw DB rows.
+	 */
+	public static function tyfcb_for_user_between( int $user_id, string $date_start, string $date_end ): array {
+		global $wpdb;
+		$table = $wpdb->prefix . 'ist_tyfcb';
+		return $wpdb->get_results( $wpdb->prepare(
+			"SELECT *
+			 FROM {$table}
+			 WHERE submitted_by_user_id = %d
+			   AND entry_date BETWEEN %s AND %s
+			 ORDER BY entry_date DESC, created_at DESC, id DESC",
+			$user_id,
+			$date_start,
+			$date_end
 		) ) ?: array(); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 	}
 

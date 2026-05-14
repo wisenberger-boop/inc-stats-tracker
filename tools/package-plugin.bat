@@ -4,7 +4,7 @@ setlocal
 :: ── Configuration ────────────────────────────────────────────────────────────
 :: Keep VERSION in sync with IST_VERSION in plugin/inc-stats-tracker/inc-stats-tracker.php
 set PLUGIN_NAME=inc-stats-tracker
-set VERSION=1.0.1-rc1
+set VERSION=1.0.5
 
 :: Paths resolved relative to this script's location (tools\)
 set ROOT=%~dp0..

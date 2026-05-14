@@ -378,6 +378,165 @@ class IST_Service_TYFCB {
 		return $id !== false ? $id : new WP_Error( 'ist_db_error', __( 'Could not save TYFCB record.', 'inc-stats-tracker' ) );
 	}
 
+	/**
+	 * Update an existing TYFCB record from member-facing edit input.
+	 *
+	 * Ownership is enforced by requiring the record's submitted_by_user_id to
+	 * match the current user. Submitter snapshot fields, data_source, created_at,
+	 * and created_by_user_id are intentionally not editable here.
+	 *
+	 * @param int   $id
+	 * @param array $input Raw POST data.
+	 * @param int   $current_user_id Logged-in WP user ID.
+	 * @return int|WP_Error Number of affected rows on success.
+	 */
+	public function update_from_input( int $id, array $input, int $current_user_id ): int|WP_Error {
+		$record = $this->model->get( $id );
+		if ( ! $record ) {
+			return new WP_Error( 'ist_missing_record', __( 'Closed business record not found.', 'inc-stats-tracker' ) );
+		}
+
+		if ( (int) $record->submitted_by_user_id !== $current_user_id ) {
+			return new WP_Error( 'ist_forbidden_record', __( 'You can only edit your own closed business records.', 'inc-stats-tracker' ) );
+		}
+
+		$attribution_model = sanitize_key( $input['attribution_model'] ?? $record->attribution_model ?? 'enhanced' );
+		if ( ! in_array( $attribution_model, array( 'legacy', 'enhanced' ), true ) ) {
+			$attribution_model = 'enhanced';
+		}
+
+		$thank_you_to_type          = 'other';
+		$thank_you_to_user_id       = null;
+		$thank_you_to_name          = '';
+		$referral_type              = '';
+		$revenue_attribution_source = '';
+		$revenue_relationship_type  = '';
+		$client_payer_name          = '';
+		$original_referrer_name     = '';
+		$original_referrer_user_id  = null;
+		$original_referrer_type     = '';
+		$referral_lineage_type      = '';
+		$attribution_notes          = '';
+
+		if ( 'enhanced' === $attribution_model ) {
+			$revenue_attribution_source = sanitize_key( $input['revenue_attribution_source'] ?? '' );
+			if ( ! in_array( $revenue_attribution_source, self::VALID_ATTRIBUTION_SOURCES, true ) ) {
+				return new WP_Error( 'ist_missing_attribution_source', __( 'Please select a revenue attribution source.', 'inc-stats-tracker' ) );
+			}
+
+			if ( in_array( $revenue_attribution_source, self::REFERRAL_SOURCES, true ) ) {
+				$original_referrer_type = sanitize_key( $input['original_referrer_type'] ?? 'other' );
+				if ( 'member' === $original_referrer_type ) {
+					$original_referrer_type = 'current_member';
+				}
+				if ( ! in_array( $original_referrer_type, self::VALID_REFERRER_TYPES, true ) ) {
+					$original_referrer_type = 'other';
+				}
+
+				if ( 'current_member' === $original_referrer_type ) {
+					$raw_referrer_id = absint( $input['original_referrer_user_id'] ?? 0 );
+					if ( ! $raw_referrer_id ) {
+						return new WP_Error( 'ist_missing_referrer', __( 'Please select the group member who referred this business.', 'inc-stats-tracker' ) );
+					}
+					$referrer_user = get_userdata( $raw_referrer_id );
+					if ( ! $referrer_user ) {
+						return new WP_Error( 'ist_invalid_referrer', __( 'The selected referrer is not a valid user.', 'inc-stats-tracker' ) );
+					}
+					$original_referrer_user_id = $raw_referrer_id;
+					$original_referrer_name    = $referrer_user->display_name;
+					$thank_you_to_type         = 'member';
+					$thank_you_to_user_id      = $raw_referrer_id;
+					$thank_you_to_name         = $referrer_user->display_name;
+				} else {
+					$original_referrer_name = self::normalize_name( sanitize_text_field( $input['original_referrer_name'] ?? '' ) );
+					if ( '' === $original_referrer_name ) {
+						return new WP_Error( 'ist_missing_referrer_name', __( 'Please enter the name of the person who referred this business.', 'inc-stats-tracker' ) );
+					}
+					$thank_you_to_type = 'other';
+					$thank_you_to_name = $original_referrer_name;
+				}
+			}
+
+			$revenue_relationship_type = sanitize_key( $input['revenue_relationship_type'] ?? '' );
+			if ( ! in_array( $revenue_relationship_type, self::VALID_RELATIONSHIP_TYPES, true ) ) {
+				return new WP_Error( 'ist_missing_relationship_type', __( 'Please select a revenue relationship type.', 'inc-stats-tracker' ) );
+			}
+
+			$referral_lineage_type = sanitize_key( $input['referral_lineage_type'] ?? '' );
+			if ( '' !== $referral_lineage_type && ! in_array( $referral_lineage_type, self::VALID_LINEAGE_TYPES, true ) ) {
+				$referral_lineage_type = '';
+			}
+
+			$client_payer_name = sanitize_text_field( $input['client_payer_name'] ?? '' );
+			$attribution_notes = sanitize_textarea_field( $input['attribution_notes'] ?? '' );
+			$referral_type     = self::ATTRIBUTION_SOURCE_TO_REFERRAL_TYPE[ $revenue_attribution_source ] ?? '';
+		} else {
+			$thank_you_to_type = sanitize_key( $input['thank_you_to_type'] ?? $record->thank_you_to_type ?? 'member' );
+			if ( ! in_array( $thank_you_to_type, self::VALID_SOURCE_TYPES, true ) ) {
+				$thank_you_to_type = 'member';
+			}
+			if ( 'member' === $thank_you_to_type ) {
+				$raw_user_id = absint( $input['thank_you_to_user_id'] ?? 0 );
+				if ( ! $raw_user_id ) {
+					return new WP_Error( 'ist_missing_source', __( 'A source member is required when attribution type is Member.', 'inc-stats-tracker' ) );
+				}
+				$thanked_user = get_userdata( $raw_user_id );
+				if ( ! $thanked_user ) {
+					return new WP_Error( 'ist_invalid_source', __( 'The selected source is not a valid user.', 'inc-stats-tracker' ) );
+				}
+				$thank_you_to_user_id = $raw_user_id;
+				$thank_you_to_name    = $thanked_user->display_name;
+			} else {
+				$thank_you_to_name = self::normalize_name( sanitize_text_field( $input['thank_you_to_name'] ?? '' ) );
+				if ( '' === $thank_you_to_name ) {
+					return new WP_Error( 'ist_missing_source_name', __( 'A source name is required when attribution type is Other Source.', 'inc-stats-tracker' ) );
+				}
+			}
+			$referral_type = sanitize_key( $input['referral_type'] ?? '' );
+			if ( '' !== $referral_type && ! in_array( $referral_type, self::VALID_REFERRAL_TYPES, true ) ) {
+				return new WP_Error( 'ist_invalid_referral_type', __( 'Referral type must be Inside, Outside, or Tier 3.', 'inc-stats-tracker' ) );
+			}
+		}
+
+		$amount = self::normalize_amount( $input['amount'] ?? '0' );
+		if ( $amount <= 0 ) {
+			return new WP_Error( 'ist_invalid_amount', __( 'Closed business amount must be greater than zero.', 'inc-stats-tracker' ) );
+		}
+
+		$business_type = sanitize_key( $input['business_type'] ?? '' );
+		if ( '' !== $business_type && ! in_array( $business_type, self::VALID_BUSINESS_TYPES, true ) ) {
+			return new WP_Error( 'ist_invalid_business_type', __( 'Business type must be New or Repeat.', 'inc-stats-tracker' ) );
+		}
+
+		$entry_date = ist_sanitize_date( $input['entry_date'] ?? '' );
+		if ( '' === $entry_date ) {
+			return new WP_Error( 'ist_missing_date', __( 'A business date is required.', 'inc-stats-tracker' ) );
+		}
+
+		$data = array(
+			'thank_you_to_type'          => $thank_you_to_type,
+			'thank_you_to_user_id'       => $thank_you_to_user_id,
+			'thank_you_to_name'          => $thank_you_to_name,
+			'amount'                     => $amount,
+			'business_type'              => $business_type,
+			'referral_type'              => $referral_type,
+			'note'                       => sanitize_textarea_field( $input['note'] ?? '' ),
+			'attribution_model'          => $attribution_model,
+			'revenue_attribution_source' => $revenue_attribution_source,
+			'revenue_relationship_type'  => $revenue_relationship_type,
+			'client_payer_name'          => $client_payer_name,
+			'original_referrer_name'     => $original_referrer_name,
+			'original_referrer_user_id'  => $original_referrer_user_id,
+			'original_referrer_type'     => $original_referrer_type,
+			'referral_lineage_type'      => $referral_lineage_type,
+			'attribution_notes'          => $attribution_notes,
+			'entry_date'                 => $entry_date,
+		);
+
+		$result = $this->model->update( $id, $data );
+		return false !== $result ? $result : new WP_Error( 'ist_db_error', __( 'Could not update TYFCB record.', 'inc-stats-tracker' ) );
+	}
+
 	public function get_all( array $where = array() ): array {
 		return $this->model->all( $where );
 	}

@@ -201,6 +201,7 @@ class IST_Profile_Nav {
 		$tyfcb_recent    = IST_Stats_Query::tyfcb_recent( $user_id );
 		$referral_recent = IST_Stats_Query::referral_recent( $user_id );
 		$connect_recent  = IST_Stats_Query::connect_recent( $user_id );
+		$tyfcb_history   = IST_Stats_Query::tyfcb_for_user_between( $user_id, $fy_start, $fy_end );
 
 		// -----------------------------------------------------------------------
 		// 3-month trend data for charts.
@@ -242,7 +243,7 @@ class IST_Profile_Nav {
 			'tyfcb_month', 'tyfcb_fy',
 			'ref_month', 'ref_fy',
 			'con_month', 'con_fy',
-			'tyfcb_recent', 'referral_recent', 'connect_recent',
+			'tyfcb_recent', 'referral_recent', 'connect_recent', 'tyfcb_history',
 			'trend_data',
 			'fy_monthly_data', 'ytd_data', 'prior_fy_label',
 			'tyfcb_rollup', 'tyfcb_coverage', 'tyfcb_by_source', 'tyfcb_by_rel', 'tyfcb_by_referrer',

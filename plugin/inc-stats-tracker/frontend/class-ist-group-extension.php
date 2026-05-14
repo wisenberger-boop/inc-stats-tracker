@@ -70,10 +70,17 @@ class IST_Group_Extension extends BP_Group_Extension {
 		}
 
 		// -----------------------------------------------------------------------
-		// Build the member user_ids scope (all current group members).
+		// Roster — kept for leaderboards and form/modal context only.
+		// Group-level totals and charts use an empty $user_ids so they include
+		// all records in the date window regardless of current membership:
+		//   - members who have since left the group
+		//   - imported rows with submitted_by_user_id = 0 (unresolved lookup)
+		// This reflects true group historical performance rather than shrinking
+		// retroactively as the roster changes.
 		// -----------------------------------------------------------------------
-		$members  = IST_Service_Members::get_group_members();
-		$user_ids = array_column( $members, 'ID' );
+		$members         = IST_Service_Members::get_group_members();
+		$roster_user_ids = array_column( $members, 'ID' ); // current roster — leaderboards only
+		$all_user_ids    = array();                         // no filter — all records in window
 
 		// -----------------------------------------------------------------------
 		// Date ranges.
@@ -88,27 +95,25 @@ class IST_Group_Extension extends BP_Group_Extension {
 		$fy_progress = IST_Fiscal_Year::get_progress( $today, $group_id );
 
 		// -----------------------------------------------------------------------
-		// KPI totals — all group members combined.
+		// KPI totals — all records in window, no roster filter.
 		// -----------------------------------------------------------------------
-		$tyfcb_month = IST_Stats_Query::tyfcb_totals( $month_start, $month_end, $user_ids );
-		$tyfcb_fy    = IST_Stats_Query::tyfcb_totals( $fy_start, $fy_end, $user_ids );
-		$ref_month   = IST_Stats_Query::referral_totals( $month_start, $month_end, $user_ids );
-		$ref_fy      = IST_Stats_Query::referral_totals( $fy_start, $fy_end, $user_ids );
-		$con_month   = IST_Stats_Query::connect_totals( $month_start, $month_end, $user_ids );
-		$con_fy      = IST_Stats_Query::connect_totals( $fy_start, $fy_end, $user_ids );
+		$tyfcb_month = IST_Stats_Query::tyfcb_totals( $month_start, $month_end, $all_user_ids );
+		$tyfcb_fy    = IST_Stats_Query::tyfcb_totals( $fy_start, $fy_end, $all_user_ids );
+		$ref_month   = IST_Stats_Query::referral_totals( $month_start, $month_end, $all_user_ids );
+		$ref_fy      = IST_Stats_Query::referral_totals( $fy_start, $fy_end, $all_user_ids );
+		$con_month   = IST_Stats_Query::connect_totals( $month_start, $month_end, $all_user_ids );
+		$con_fy      = IST_Stats_Query::connect_totals( $fy_start, $fy_end, $all_user_ids );
 
 		// -----------------------------------------------------------------------
-		// Leaderboards — FY scope only.
+		// Leaderboards — current roster only (ranking active members).
 		// -----------------------------------------------------------------------
-		$tyfcb_leaderboard    = IST_Stats_Query::tyfcb_leaderboard( $fy_start, $fy_end, $user_ids );
-		$referral_leaderboard = IST_Stats_Query::referral_leaderboard( $fy_start, $fy_end, $user_ids );
-		$connect_leaderboard  = IST_Stats_Query::connect_leaderboard( $fy_start, $fy_end, $user_ids );
+		$tyfcb_leaderboard    = IST_Stats_Query::tyfcb_leaderboard( $fy_start, $fy_end, $roster_user_ids );
+		$referral_leaderboard = IST_Stats_Query::referral_leaderboard( $fy_start, $fy_end, $roster_user_ids );
+		$connect_leaderboard  = IST_Stats_Query::connect_leaderboard( $fy_start, $fy_end, $roster_user_ids );
 
-		// 3-month trend data for charts.
-		$trend_data = IST_Stats_Query::three_month_trend( $today, $user_ids );
-
-		// FY monthly trend and YTD same-point comparison.
-		$fy_monthly_data = IST_Stats_Query::fy_monthly_trend( $fy_start, $today, $user_ids );
+		// 3-month trend and FY monthly charts — all records in window.
+		$trend_data      = IST_Stats_Query::three_month_trend( $today, $all_user_ids );
+		$fy_monthly_data = IST_Stats_Query::fy_monthly_trend( $fy_start, $today, $all_user_ids );
 
 		$prior_equiv_end = wp_date( 'Y-m-d', strtotime( '-1 year', strtotime( $today ) ) );
 		$prior_fy_start  = IST_Fiscal_Year::get_fy_start( $prior_equiv_end, $group_id );
@@ -116,17 +121,21 @@ class IST_Group_Extension extends BP_Group_Extension {
 		$ytd_data        = IST_Stats_Query::ytd_comparison(
 			$fy_start, $today,
 			$prior_fy_start, $prior_equiv_end,
-			$user_ids
+			$all_user_ids
 		);
 
 		// -----------------------------------------------------------------------
-		// Attribution reporting — FY scope, all group members.
+		// Attribution reporting — all records in FY window.
 		// -----------------------------------------------------------------------
-		$tyfcb_rollup      = IST_Stats_Query::tyfcb_attribution_rollup( $fy_start, $fy_end, $user_ids );
-		$tyfcb_coverage    = IST_Stats_Query::tyfcb_model_coverage( $fy_start, $fy_end, $user_ids );
-		$tyfcb_by_source   = IST_Stats_Query::tyfcb_by_attribution_source( $fy_start, $fy_end, $user_ids );
-		$tyfcb_by_rel      = IST_Stats_Query::tyfcb_by_relationship_type( $fy_start, $fy_end, $user_ids );
-		$tyfcb_by_referrer = IST_Stats_Query::tyfcb_by_referrer_type( $fy_start, $fy_end, $user_ids );
+		$tyfcb_rollup      = IST_Stats_Query::tyfcb_attribution_rollup( $fy_start, $fy_end, $all_user_ids );
+		$tyfcb_coverage    = IST_Stats_Query::tyfcb_model_coverage( $fy_start, $fy_end, $all_user_ids );
+		$tyfcb_by_source   = IST_Stats_Query::tyfcb_by_attribution_source( $fy_start, $fy_end, $all_user_ids );
+		$tyfcb_by_rel      = IST_Stats_Query::tyfcb_by_relationship_type( $fy_start, $fy_end, $all_user_ids );
+		$tyfcb_by_referrer = IST_Stats_Query::tyfcb_by_referrer_type( $fy_start, $fy_end, $all_user_ids );
+
+		// Pass roster_user_ids aliased as $user_ids for template back-compat
+		// (used only by form modal context, not by any totals display).
+		$user_ids = $roster_user_ids;
 
 		$form_urls = ist_get_form_urls();
 

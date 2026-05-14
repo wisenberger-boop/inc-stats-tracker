@@ -64,3 +64,41 @@ See `docs/database-schema.md` for full schema.
 | `{prefix}ist_tyfcb` | TYFCB records |
 | `{prefix}ist_referrals` | Referral records |
 | `{prefix}ist_connects` | Connect records |
+
+All three tables include a `data_source` column (`'native'` or `'import'`) that distinguishes
+records entered through the plugin forms from records loaded via the historical CSV import.
+
+## Group Stats Reporting Scope
+
+Group Stats (the BuddyBoss group tab rendered by `IST_Group_Extension::display()`) uses a
+two-tier data scope:
+
+| Query type | Scope |
+|---|---|
+| KPI totals, trend charts, FY monthly charts, YTD comparison, attribution rollups | **All records in the date window** — no membership filter. Includes records from former members and imported rows where `submitted_by_user_id = 0`. |
+| Leaderboards | **Current BuddyBoss group roster only** — ranks active members. |
+
+This design reflects a core principle: group-level performance reporting should represent true
+historical activity, not a retroactively shrinking view that changes as the roster changes.
+
+Implementation: `$all_user_ids = array()` (no IN filter) for aggregates; `$roster_user_ids`
+(from `IST_Service_Members::get_group_members()`) for leaderboards only.
+
+See `docs/implementation-notes.md` for the historical FY YTD baseline discrepancy context.
+
+## Packaging and Build Workflow
+
+The release ZIP is built from `plugin/inc-stats-tracker/` only. The project root also contains
+`docs/`, `project-management/`, and `tools/` — none of which should ship to production.
+
+**Build script:** `tools/package-plugin.bat` calls `tools/package-plugin.ps1`. The PS1 script
+uses .NET's `ZipArchive` directly with explicit forward-slash normalization on all entry names.
+This is required because PowerShell 5.1's `Compress-Archive` produces ZIP entry names with
+backslash separators, which PHP's `ZipArchive::extractTo()` on Linux cannot correctly extract
+as a folder hierarchy.
+
+**CSV staging safety:** The `plugin/inc-stats-tracker/docs/source-assets/csv/` folder is a
+runtime staging area for historical import source files. `.csv` files in that folder are
+gitignored and the build script aborts if any are present before packaging.
+
+**Release checklist:** `project-management/checklists/plugin-release-checklist.md`.
