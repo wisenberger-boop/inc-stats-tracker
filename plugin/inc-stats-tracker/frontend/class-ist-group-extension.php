@@ -115,7 +115,11 @@ class IST_Group_Extension extends BP_Group_Extension {
 		$trend_data      = IST_Stats_Query::three_month_trend( $today, $all_user_ids );
 		$fy_monthly_data = IST_Stats_Query::fy_monthly_trend( $fy_start, $today, $all_user_ids );
 
-		$prior_equiv_end = wp_date( 'Y-m-d', strtotime( '-1 year', strtotime( $today ) ) );
+		$prior_equiv_dt = ( new DateTime( $today ) )->modify( '-1 year' );
+		if ( '02-29' === substr( $today, 5 ) ) {
+			$prior_equiv_dt->modify( '-1 day' );
+		}
+		$prior_equiv_end = $prior_equiv_dt->format( 'Y-m-d' );
 		$prior_fy_start  = IST_Fiscal_Year::get_fy_start( $prior_equiv_end, $group_id );
 		$prior_fy_label  = IST_Fiscal_Year::get_label( $prior_equiv_end, $group_id );
 		$ytd_data        = IST_Stats_Query::ytd_comparison(

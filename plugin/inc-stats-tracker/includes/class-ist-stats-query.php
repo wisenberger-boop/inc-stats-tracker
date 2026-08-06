@@ -283,7 +283,9 @@ class IST_Stats_Query {
 	 * Typical usage:
 	 *   $current_start = IST_Fiscal_Year::get_fy_start( $today, $group_id )
 	 *   $current_end   = $today
-	 *   $prior_end     = wp_date( 'Y-m-d', strtotime( '-1 year', strtotime( $today ) ) )
+	 *   $prior_dt      = ( new DateTime( $today ) )->modify( '-1 year' )
+	 *   if ( '02-29' === substr( $today, 5 ) ) { $prior_dt->modify( '-1 day' ); }
+	 *   $prior_end     = $prior_dt->format( 'Y-m-d' )
 	 *   $prior_start   = IST_Fiscal_Year::get_fy_start( $prior_end, $group_id )
 	 *
 	 * @param string $current_start  Y-m-d start of the current FY.
