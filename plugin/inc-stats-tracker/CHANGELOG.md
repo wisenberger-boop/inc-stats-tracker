@@ -8,11 +8,76 @@ Versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Planned — Next Release]
 
-The following items are identified for the next release cycle but are not yet implemented.
+The following items are queued for a future release cycle.
 
 - **Edit record support for Referrals and Connects** — inline or page-based editing to correct member mistakes without deleting and re-entering.
 - **Bulk delete / batch utilities** — select and delete multiple records at once from the admin list pages, with appropriate capability and confirmation guards.
 - **Admin notice for imported-row deletion** — a visible warning in the admin list when an admin attempts to delete a row tagged `data_source = 'import'`, clarifying that the row will not be re-imported unless the import hash is also cleared.
+
+---
+
+## [1.0.9] — 2026-08-29
+
+### Changed — Group Stats KPI layout
+
+- Consolidated fiscal-year and month-to-date Closed Business submission counts into the Closed
+  Business amount card while preserving prior-year amount context and the MTD member leaderboard.
+- Reordered the KPI grid to place Referrals Given and Closed Business together in the first row.
+- Reduced the KPI grid from four cards to three and moved Connects Logged to a compact full-width row.
+- Preserved the Referrals and Closed Business leaderboards, accessible reading order, and mobile
+  single-column reflow.
+
+No database schema changes.
+
+---
+
+## [1.0.8] — 2026-08-29
+
+### Added — Group Stats monthly Referrals Given member leaderboard
+
+- Added a current-month Referrals Given leaderboard directly beneath the Referrals KPI, ranking up
+  to ten active BuddyBoss group members by referral count.
+- Reused the established referral leaderboard query with the current-month window and an explicit
+  empty-roster guard, preserving the lower fiscal-year Top Referral Givers leaderboard.
+- Generalized the embedded KPI leaderboard presentation for count-based metrics, including
+  referral-specific singular/plural labels and empty-state copy.
+
+No database schema changes.
+
+---
+
+## [1.0.7] — 2026-08-28
+
+### Added — Group Stats monthly Closed Business member leaderboard
+
+- Added a current-month Closed Business submitter leaderboard directly beneath the Amount KPI,
+  ranking active BuddyBoss group members by the amount they submitted during the month.
+- Kept attribution separate from submitter ranking so credited revenue sources do not replace the
+  member who recorded the Closed Business entry.
+- Added empty-roster/query guards and deterministic SQL/UI contract coverage.
+
+### Changed — Group Stats KPI clarity
+
+- Clarified the Closed Business Count fiscal-year value as YTD.
+- Matched the visual emphasis of Amount and Count month-to-date values with their fiscal-year values.
+
+No database schema changes.
+
+---
+
+## [1.0.6] — 2026-08-28
+
+### Fixed — fiscal-year YTD timezone boundaries
+
+- Replaced the `strtotime()` / `wp_date()` UTC round-trip used to calculate the prior-year
+  equivalent end date on My Stats and Group Stats with `DateTime` calendar math.
+- Prevented prior-year comparison windows from ending one day early on sites west of UTC,
+  including the fiscal-year-boundary case that could display the wrong prior fiscal-year label.
+- Clamped February 29 comparisons to February 28 in non-leap prior years.
+- Corrected the shared stats-query usage documentation so future callers do not copy the
+  unsafe date-boundary pattern.
+
+No database schema changes.
 
 ---
 

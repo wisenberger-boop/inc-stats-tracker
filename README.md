@@ -24,4 +24,29 @@ Returns the logged-in user's fiscal-year summary of stats.
 
 ## Version
 
-1.0.6 - Added REST API endpoint for member summaries.
+1.0.9 - Consolidated the Group Stats KPI layout into Referrals, Closed Business, and Connects cards.
+
+## Local Verification
+
+Run the deterministic project checks from the repository root:
+
+```powershell
+powershell -NoProfile -File tools\verify-project.ps1
+```
+
+After packaging, include the ZIP inspection:
+
+```powershell
+powershell -NoProfile -File tools\verify-project.ps1 `
+  -ZipPath build\releases\inc-stats-tracker-1.0.9.zip
+```
+
+These checks cover PHP syntax, release-version consistency, fiscal-year timezone regression
+cases, runtime CSV staging hygiene, and release ZIP structure. They do not replace live
+WordPress/BuddyBoss testing.
+
+## Deployment
+
+SSH/WP-CLI deployment uses explicit, separately configured Development and Production targets.
+It is read-only by default and requires target-specific approval before live use. See
+[`docs/deployment.md`](docs/deployment.md).

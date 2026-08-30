@@ -4,7 +4,7 @@ Tags: stats, reporting, buddyboss, community, membership
 Requires at least: 6.0
 Tested up to: 6.8
 Requires PHP: 8.0
-Stable tag: 1.0.5
+Stable tag: 1.0.9
 License: Proprietary
 License URI: https://axisweb.com
 
@@ -99,6 +99,33 @@ Tables are created on activation and updated safely on plugin upgrade via `dbDel
 
 == Changelog ==
 
+= 1.0.9 =
+Group Stats three-card KPI layout. No database schema changes.
+
+* Combined Closed Business FY/MTD amounts and submission counts into one card.
+* Placed Referrals Given and Closed Business together above a full-width Connects Logged card.
+* Preserved both MTD leaderboards and mobile reading order.
+
+= 1.0.8 =
+Group Stats monthly Referrals Given leaderboard. No database schema changes.
+
+* Added a current-month Referrals Given leaderboard for up to ten active BuddyBoss group members.
+* Added count-specific referral wording and an intentional empty state to the shared KPI component.
+* Preserved the existing fiscal-year Top Referral Givers leaderboard.
+
+= 1.0.7 =
+Group Stats monthly Closed Business leaderboard and KPI label clarity. No database schema changes.
+
+* Added a current-month Closed Business submitter leaderboard for active BuddyBoss group members.
+* Kept submitter ranking separate from Closed Business attribution.
+* Clarified the Closed Business Count fiscal-year value as YTD and matched MTD visual emphasis.
+
+= 1.0.6 =
+Fiscal-year YTD timezone boundary correction. No database schema changes.
+
+* Corrected prior-year YTD comparison windows and fiscal-year labels on sites west of UTC.
+* Added safe February 29 to February 28 clamping for prior-year comparisons.
+
 = 1.0.5 =
 My Stats closed business history display update. No database schema changes.
 
@@ -150,6 +177,18 @@ Initial production release candidate. See full development history in CHANGELOG.
 * Custom capability registration on activation; cleanup on deactivation.
 
 == Upgrade Notice ==
+
+= 1.0.9 =
+No database schema changes. Safe to deploy over any 1.0.8 installation without deactivation.
+
+= 1.0.8 =
+No database schema changes. Safe to deploy over any 1.0.7 installation without deactivation.
+
+= 1.0.7 =
+No database schema changes. Safe to deploy over any 1.0.6 installation without deactivation.
+
+= 1.0.6 =
+No database schema changes. Safe to deploy over any 1.0.5 installation without deactivation.
 
 = 1.0.5 =
 No database schema changes. Safe to deploy over any 1.0.4 installation without deactivation.

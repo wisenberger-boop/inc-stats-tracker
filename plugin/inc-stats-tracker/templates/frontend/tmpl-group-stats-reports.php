@@ -12,6 +12,7 @@
  *   $con_month            array     { count }
  *   $con_fy               array     { count }
  *   $tyfcb_leaderboard    array     Rows from IST_Stats_Query::tyfcb_leaderboard()
+ *   $tyfcb_month_submitters array   Current-month active-member submitter leaderboard.
  *   $referral_leaderboard array     Rows from IST_Stats_Query::referral_leaderboard()
  *   $connect_leaderboard  array     Rows from IST_Stats_Query::connect_leaderboard()
  *   $fy_progress          array     From IST_Fiscal_Year::get_progress() — passed as-is to partial.
@@ -72,43 +73,61 @@ $atts            = $atts ?? array();
 	</div>
 
 	<?php /* ----------------------------------------------------------------
-	   KPI Metric Cards — 2-column grid, FY value primary / month secondary
+	   KPI Metric Cards — leaderboard cards first, full-width Connects second row
 	   --------------------------------------------------------------- */ ?>
 	<div class="ist-kpi-grid">
 		<?php
 		ist_get_template( 'frontend/partials/tmpl-kpi-row.php', array(
-			'label'        => __( 'Closed Business (Amount)', 'inc-stats-tracker' ),
-			'month_value'  => $tyfcb_month['amount'],
-			'fy_value'     => $tyfcb_fy['amount'],
-			'format'       => 'currency',
-			'fy_label'     => $fy_ytd_label,
-			'month_label'  => $month_label,
-			'prior_value'  => $ytd_data['prior']['tyfcb_amount'],
-			'prior_label'  => $prior_ytd_label,
+			'label'                       => __( 'Referrals Given', 'inc-stats-tracker' ),
+			'month_value'                 => $ref_month['count'],
+			'fy_value'                    => $ref_fy['count'],
+			'format'                      => 'count',
+			'fy_label'                    => $fy_label,
+			'month_label'                 => $month_label,
+			'emphasize_month'             => true,
+			'leaderboard'                 => $referral_month_givers,
+			'leaderboard_id'              => 'ist-group-monthly-referral-leaders',
+			'leaderboard_value_type'      => 'count',
+			'leaderboard_unit_singular'   => __( 'referral', 'inc-stats-tracker' ),
+			'leaderboard_unit_plural'     => __( 'referrals', 'inc-stats-tracker' ),
+			'leaderboard_empty_message'   => __( 'No referrals were given this month.', 'inc-stats-tracker' ),
+			'leaderboard_label'           => sprintf(
+				/* translators: %s: current month label, e.g. "August 2026 (MTD)". */
+				__( '%s Referral Leaders', 'inc-stats-tracker' ),
+				$month_label
+			),
 		) );
 		ist_get_template( 'frontend/partials/tmpl-kpi-row.php', array(
-			'label'       => __( 'Closed Business (Count)', 'inc-stats-tracker' ),
-			'month_value' => $tyfcb_month['count'],
-			'fy_value'    => $tyfcb_fy['count'],
-			'format'      => 'count',
-			'fy_label'    => $fy_label,
-			'month_label' => $month_label,
+			'label'                    => __( 'Closed Business', 'inc-stats-tracker' ),
+			'month_value'              => $tyfcb_month['amount'],
+			'fy_value'                 => $tyfcb_fy['amount'],
+			'format'                   => 'currency',
+			'fy_label'                 => $fy_ytd_label,
+			'month_label'              => $month_label,
+			'prior_value'              => $ytd_data['prior']['tyfcb_amount'],
+			'prior_label'              => $prior_ytd_label,
+			'fy_secondary_value'       => $tyfcb_fy['count'],
+			'month_secondary_value'    => $tyfcb_month['count'],
+			'secondary_unit_singular'  => __( 'submission', 'inc-stats-tracker' ),
+			'secondary_unit_plural'    => __( 'submissions', 'inc-stats-tracker' ),
+			'emphasize_month'          => true,
+			'leaderboard'              => $tyfcb_month_submitters,
+			'leaderboard_id'           => 'ist-group-monthly-tyfcb-leaders',
+			'leaderboard_label'        => sprintf(
+				/* translators: %s: current month label, e.g. "August 2026 (MTD)". */
+				__( '%s Member Leaders', 'inc-stats-tracker' ),
+				$month_label
+			),
 		) );
 		ist_get_template( 'frontend/partials/tmpl-kpi-row.php', array(
-			'label'       => __( 'Referrals Given', 'inc-stats-tracker' ),
-			'month_value' => $ref_month['count'],
-			'fy_value'    => $ref_fy['count'],
-			'format'      => 'count',
-			'fy_label'    => $fy_label,
-			'month_label' => $month_label,
-		) );
-		ist_get_template( 'frontend/partials/tmpl-kpi-row.php', array(
-			'label'       => __( 'Connects Logged', 'inc-stats-tracker' ),
-			'month_value' => $con_month['count'],
-			'fy_value'    => $con_fy['count'],
-			'format'      => 'count',
-			'fy_label'    => $fy_label,
-			'month_label' => $month_label,
+			'label'          => __( 'Connects Logged', 'inc-stats-tracker' ),
+			'month_value'    => $con_month['count'],
+			'fy_value'       => $con_fy['count'],
+			'format'         => 'count',
+			'fy_label'       => $fy_label,
+			'month_label'    => $month_label,
+			'full_width'     => true,
+			'compact_values' => true,
 		) );
 		?>
 	</div>

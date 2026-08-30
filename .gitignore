@@ -4,8 +4,12 @@ build/releases/*.zip
 # Runtime import CSVs inside plugin (copy here before import, remove after)
 plugin/inc-stats-tracker/docs/source-assets/csv/*.csv
 
-# Claude Code memory and session data
-.claude/
+# Claude Code memory and session data (project skills in .claude/skills/ are tracked)
+.claude/*
+!.claude/skills/
 
 # VS Code workspace file
 *.code-workspace
+
+# Local AI review output
+.local/

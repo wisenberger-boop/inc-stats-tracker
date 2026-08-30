@@ -11,6 +11,8 @@ the active member set at runtime; it is not stored in plugin tables.
   date-range filters and reports. Required on all stat records.
 - `created_at DATETIME` — auto-set MySQL insert timestamp. Audit and entry-order use only.
   Never used as the reporting date.
+- `updated_at DATETIME` — `NULL` until a row is edited, then maintained by MySQL.
+- `data_source VARCHAR(20)` — `native` for plugin submissions or `import` for historical rows.
 
 **Snapshot fields (`_name` columns):**
 Written once at insert time and never updated. Preserve the display name of any person
@@ -44,11 +46,22 @@ Thank You for Closed Business records.
 | `business_type` | `VARCHAR(20)` | NOT NULL DEFAULT `''` | Whether the business is new or repeat. Values: `new` \| `repeat`. Required on new records; `''` accepted for historical import. |
 | `referral_type` | `VARCHAR(20)` | NOT NULL DEFAULT `''` | How the business originated relative to the group. Values: `inside` \| `outside` \| `tier-3`. Required on new records; `''` for historical import. |
 | `note` | `TEXT` | NULL | Optional comments. |
+| `attribution_model` | `VARCHAR(20)` | NOT NULL DEFAULT `'legacy'` | `legacy` or `enhanced`; selects the applicable attribution fields. |
+| `revenue_attribution_source` | `VARCHAR(50)` | NOT NULL DEFAULT `''` | Enhanced attribution source. |
+| `revenue_relationship_type` | `VARCHAR(50)` | NOT NULL DEFAULT `''` | Enhanced revenue relationship classification. |
+| `client_payer_name` | `VARCHAR(255)` | NOT NULL DEFAULT `''` | Client or payer snapshot supplied for enhanced records. |
+| `original_referrer_name` | `VARCHAR(255)` | NOT NULL DEFAULT `''` | Original referrer snapshot or free-text name. |
+| `original_referrer_user_id` | `BIGINT(20) UNSIGNED` | NULL | WP user ID when the original referrer is a current member. |
+| `original_referrer_type` | `VARCHAR(20)` | NOT NULL DEFAULT `''` | Member or other classification for the original referrer. |
+| `referral_lineage_type` | `VARCHAR(50)` | NOT NULL DEFAULT `''` | Enhanced referral-lineage classification. |
+| `attribution_notes` | `TEXT` | NULL | Optional enhanced attribution detail. |
+| `data_source` | `VARCHAR(20)` | NOT NULL DEFAULT `'native'` | `native` or `import`. |
 | `entry_date` | `DATE` | NOT NULL | User-supplied date of the business event. Primary reporting date field. |
 | `created_at` | `DATETIME` | NOT NULL DEFAULT CURRENT_TIMESTAMP | Auto-set insert timestamp. Audit only. |
+| `updated_at` | `DATETIME` | NULL | Updated automatically when the row changes. |
 | `created_by_user_id` | `BIGINT(20) UNSIGNED` | NOT NULL | WP user who physically entered the record. May differ from `submitted_by_user_id` when an admin enters on behalf. |
 
-**Indexes:** `submitted_by_user_id`, `thank_you_to_user_id`, `entry_date`
+**Indexes:** `submitted_by_user_id`, `thank_you_to_user_id`, `attribution_model`, `data_source`, `entry_date`
 
 ---
 
@@ -65,11 +78,13 @@ Referral records.
 | `referral_type` | `VARCHAR(20)` | NOT NULL DEFAULT `''` | How the referral relates to the group. Values: `inside` \| `outside` \| `tier-3`. Required; `''` for historical import. |
 | `status` | `VARCHAR(50)` | NOT NULL DEFAULT `''` | Handoff method — how the referral was passed. Values: `emailed` \| `gave-phone` \| `will-initiate`. This is NOT a lifecycle status. `''` for historical import. |
 | `note` | `TEXT` | NULL | Referral details. Required on new records (form enforces); `''` accepted for historical import. |
+| `data_source` | `VARCHAR(20)` | NOT NULL DEFAULT `'native'` | `native` or `import`. |
 | `entry_date` | `DATE` | NOT NULL | User-supplied date of the referral event |
 | `created_at` | `DATETIME` | NOT NULL DEFAULT CURRENT_TIMESTAMP | Auto-set insert timestamp. Audit only. |
+| `updated_at` | `DATETIME` | NULL | Updated automatically when the row changes. |
 | `created_by_user_id` | `BIGINT(20) UNSIGNED` | NOT NULL | WP user who entered the record |
 
-**Indexes:** `referred_by_user_id`, `entry_date`
+**Indexes:** `referred_by_user_id`, `data_source`, `entry_date`
 
 ---
 
@@ -85,11 +100,13 @@ Connect (one-to-one or group meeting) records.
 | `connected_with_user_id` | `BIGINT(20) UNSIGNED` | NULL | Nullable. WP user ID if the other party is a group member. Schema support only; not surfaced in MVP frontend. |
 | `meet_where` | `VARCHAR(50)` | NOT NULL DEFAULT `''` | Meeting medium. Values: `in-person` \| `zoom` \| `telephone`. Required; `''` for historical import. Powers the "How We Meet" pie chart. |
 | `note` | `TEXT` | NULL | Topic of conversation. Optional. |
+| `data_source` | `VARCHAR(20)` | NOT NULL DEFAULT `'native'` | `native` or `import`. |
 | `entry_date` | `DATE` | NOT NULL | User-supplied date of the connect meeting |
 | `created_at` | `DATETIME` | NOT NULL DEFAULT CURRENT_TIMESTAMP | Auto-set insert timestamp. Audit only. |
+| `updated_at` | `DATETIME` | NULL | Updated automatically when the row changes. |
 | `created_by_user_id` | `BIGINT(20) UNSIGNED` | NOT NULL | WP user who entered the record |
 
-**Indexes:** `member_user_id`, `entry_date`
+**Indexes:** `member_user_id`, `data_source`, `entry_date`
 
 ---
 
@@ -97,6 +114,12 @@ Connect (one-to-one or group meeting) records.
 The installed DB version is stored in `get_option('ist_db_version')`.
 Run `dbDelta()` again on plugin update when the version changes.
 Version is compared in the activator before running migrations.
+
+## Lifecycle and removal
+
+Deactivation removes the plugin's custom capabilities and flushes rewrite rules. Tables,
+options, and records are intentionally retained. There is no automatic `uninstall.php`
+destructor; any permanent data removal requires an explicit, separately reviewed procedure.
 
 **Migration note — `connect_type` column:** `dbDelta()` adds new columns but does NOT
 drop or rename existing ones. Installations that previously had `connect_type` will retain

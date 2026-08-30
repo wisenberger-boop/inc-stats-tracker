@@ -110,6 +110,12 @@ class IST_Group_Extension extends BP_Group_Extension {
 		$tyfcb_leaderboard    = IST_Stats_Query::tyfcb_leaderboard( $fy_start, $fy_end, $roster_user_ids );
 		$referral_leaderboard = IST_Stats_Query::referral_leaderboard( $fy_start, $fy_end, $roster_user_ids );
 		$connect_leaderboard  = IST_Stats_Query::connect_leaderboard( $fy_start, $fy_end, $roster_user_ids );
+		$tyfcb_month_submitters = $roster_user_ids
+			? IST_Stats_Query::tyfcb_submitter_leaderboard( $month_start, $month_end, $roster_user_ids )
+			: array();
+		$referral_month_givers = $roster_user_ids
+			? IST_Stats_Query::referral_leaderboard( $month_start, $month_end, $roster_user_ids )
+			: array();
 
 		// 3-month trend and FY monthly charts — all records in window.
 		$trend_data      = IST_Stats_Query::three_month_trend( $today, $all_user_ids );
@@ -156,7 +162,7 @@ class IST_Group_Extension extends BP_Group_Extension {
 			'tyfcb_month', 'tyfcb_fy',
 			'ref_month', 'ref_fy',
 			'con_month', 'con_fy',
-			'tyfcb_leaderboard', 'referral_leaderboard', 'connect_leaderboard',
+			'tyfcb_leaderboard', 'referral_leaderboard', 'connect_leaderboard', 'tyfcb_month_submitters', 'referral_month_givers',
 			'trend_data',
 			'fy_monthly_data', 'ytd_data', 'prior_fy_label',
 			'tyfcb_rollup', 'tyfcb_coverage', 'tyfcb_by_source', 'tyfcb_by_rel', 'tyfcb_by_referrer',

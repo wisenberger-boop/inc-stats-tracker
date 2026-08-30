@@ -722,6 +722,62 @@ class IST_Stats_Query {
 	// -------------------------------------------------------------------------
 
 	/**
+	 * TYFCB submitter leaderboard: ranks members by the business amount they logged.
+	 *
+	 * Unlike tyfcb_leaderboard(), which ranks credited business sources by
+	 * thank_you_to_name, this query groups by submitted_by_user_id so it can show
+	 * which active members submitted the most Closed Business in a date window.
+	 *
+	 * Result rows: { user_id (int), name (string), amount (float), count (int) }
+	 * Ordered by amount DESC, count DESC, name ASC.
+	 *
+	 * @param string $date_start
+	 * @param string $date_end
+	 * @param array  $user_ids  Scope to these submitters. Empty = all records.
+	 * @param int    $limit
+	 * @return array
+	 */
+	public static function tyfcb_submitter_leaderboard(
+		string $date_start,
+		string $date_end,
+		array $user_ids = array(),
+		int $limit = 10
+	): array {
+		global $wpdb;
+
+		$table = $wpdb->prefix . 'ist_tyfcb';
+		$args  = array( $date_start, $date_end );
+		$sql   = "SELECT submitted_by_user_id AS user_id,
+		                 MAX(submitted_by_name) AS name,
+		                 SUM(amount) AS amount,
+		                 COUNT(*) AS count
+		          FROM {$table}
+		          WHERE entry_date BETWEEN %s AND %s";
+
+		if ( $user_ids ) {
+			$sql  .= ' AND submitted_by_user_id IN (' . self::placeholders( $user_ids ) . ')';
+			$args  = array_merge( $args, array_map( 'absint', $user_ids ) );
+		}
+
+		$sql   .= ' GROUP BY submitted_by_user_id ORDER BY amount DESC, count DESC, name ASC LIMIT %d';
+		$args[] = max( 1, $limit );
+
+		$rows = $wpdb->get_results( $wpdb->prepare( $sql, $args ) ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+		if ( ! $rows ) {
+			return array();
+		}
+
+		return array_map( static function ( $row ) {
+			return array(
+				'user_id' => (int) $row->user_id,
+				'name'    => $row->name,
+				'amount'  => (float) $row->amount,
+				'count'   => (int) $row->count,
+			);
+		}, $rows );
+	}
+
+	/**
 	 * TYFCB leaderboard: ranks credited business sources by total amount.
 	 *
 	 * Ranking column: thank_you_to_name (display name snapshot written at insert).

@@ -29,6 +29,8 @@
 
 ## 3. Build
 
+- [ ] Run `powershell -NoProfile -File tools\verify-project.ps1`
+- [ ] Verification reports matching versions and passing PHP/date checks
 - [ ] Run `tools\package-plugin.bat`
 - [ ] Script exits with "Done" — no errors reported
 - [ ] ZIP created at `build/releases/inc-stats-tracker-{VERSION}.zip`
@@ -45,6 +47,8 @@ Open the ZIP and verify its contents before deploying anything:
 - [ ] ZIP does **not** contain any `.csv` files anywhere
 - [ ] ZIP does **not** contain `node_modules/`, `vendor/`, or other dev-only dependency folders
 - [ ] Main plugin file `inc-stats-tracker/inc-stats-tracker.php` is present and has the correct version header
+- [ ] Run `powershell -NoProfile -File tools\verify-project.ps1 -ZipPath <zip-path>`
+- [ ] Record the release ZIP SHA-256 checksum in the handoff or deployment record
 
 ---
 

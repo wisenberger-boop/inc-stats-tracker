@@ -14,8 +14,9 @@ class IST_Deactivator {
 	/**
 	 * Run on plugin deactivation.
 	 *
-	 * Note: DB tables and data are intentionally preserved on deactivation.
-	 * Use uninstall.php for full data removal.
+	 * DB tables, options, and data are intentionally preserved on deactivation.
+	 * This plugin does not provide an automatic uninstall/data-removal routine;
+	 * destructive removal requires an explicit, separately reviewed procedure.
 	 */
 	public static function deactivate(): void {
 		IST_Capabilities::remove_caps();
