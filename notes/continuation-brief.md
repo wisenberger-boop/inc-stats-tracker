@@ -168,7 +168,8 @@ reload the results from the last prompt and have that session context`.
 Git handoff authorization was subsequently granted. Release recovery commit `1ebd785` contains the
 explicit reviewed `1.0.9` manifest and results commit `080b8ea` records it. Both are on `origin/main`;
 reviewer evidence fix `9bc04ed` is also pushed and guarantees current HEAD is always in the packet.
-Final reviewer rereview is the remaining gate.
+Claude rereview returned PASS with no blocking issues. The Git handoff is complete; tagging remains
+a separate optional gate.
 
 Suggested startup command: `startup context`.
 

@@ -2,7 +2,7 @@
 
 Date: 2026-08-30
 Task: `notes/task-set-1.0.9-git-handoff-2026-08-30.md`
-Outcome: COMPLETE — rereview pending
+Outcome: COMPLETE — Claude PASS
 
 ## Authorization and Scope
 
@@ -41,4 +41,6 @@ Outcome: COMPLETE — rereview pending
   to `origin/main` with the new runner contract and no tag or history rewrite.
 - The current results-only tip commit records final handoff state; the hardened runner includes that
   current HEAD automatically even though a commit cannot contain its own hash.
-- Pending final Claude rereview.
+- Final Claude rereview at `e6f0492` returned `PASS` with no blocking issues. It confirmed the full
+  linear commit chain, manifest exclusions, normal pushes, clean Git recovery point, and the
+  HEAD-inclusive reviewer regression fix.
