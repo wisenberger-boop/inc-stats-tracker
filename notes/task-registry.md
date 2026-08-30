@@ -8,7 +8,7 @@ Last updated: 2026-08-29
 | P1 | Superseded by 1.0.9 | `1.0.8` Referrals Given MTD | Preserved in 1.0.9; both targets have advanced to 1.0.9. |
 | P1 | Superseded | Production `1.0.7` | Replaced by the exact approved `1.0.8` deployment; prior Closed Business MTD slice remains preserved. |
 | P1 | Superseded | Development `1.0.7` | Replaced by the exact approved `1.0.8` deployment. Extra old failed-attempt archive still awaits cleanup approval. |
-| P1 | Approval required | Intentional `1.0.9` Git handoff | Post-Production Claude review FAIL: live 1.0.9 has no commit/tag recovery point. Prepare a narrow reviewed manifest; commit/push/tag require separate authorization, then rerun review. |
+| P1 | Commit created / push pending | Intentional `1.0.9` Git handoff | Release recovery commit `1ebd785` contains the reviewed manifest. Push normally and rerun Claude review; tagging remains separately gated. |
 | P1 | Blocked | Historical CSV privacy/retention | Owner decision required before moving, deleting, sanitizing, or rewriting history. |
 | P2 | Ready | WordPress/BuddyBoss integration checks | Add activation, permission, schema, REST, and member workflow coverage. |
 | P2 | Ready | Repository-listed later compatibility target | Test the target stack before changing `Tested up to: 6.8`. |

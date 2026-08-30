@@ -165,6 +165,9 @@ reload the results from the last prompt and have that session context`.
 3. Obtain separate authorization for the narrow `1.0.9` Git handoff, then fix the justified
    post-Production Claude P1 traceability finding and rerun review.
 
+Git handoff authorization was subsequently granted. Release recovery commit `1ebd785` contains the
+explicit reviewed `1.0.9` manifest; normal push and reviewer rereview are the remaining steps.
+
 Suggested startup command: `startup context`.
 
 ## Progress Assessment
