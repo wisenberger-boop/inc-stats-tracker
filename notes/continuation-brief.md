@@ -166,7 +166,8 @@ reload the results from the last prompt and have that session context`.
    post-Production Claude P1 traceability finding and rerun review.
 
 Git handoff authorization was subsequently granted. Release recovery commit `1ebd785` contains the
-explicit reviewed `1.0.9` manifest; normal push and reviewer rereview are the remaining steps.
+explicit reviewed `1.0.9` manifest and results commit `080b8ea` records it. Both are on `origin/main`;
+reviewer rereview is the remaining gate.
 
 Suggested startup command: `startup context`.
 

@@ -2,7 +2,7 @@
 
 Date: 2026-08-30
 Task: `notes/task-set-1.0.9-git-handoff-2026-08-30.md`
-Outcome: COMMITTED — push/rereview pending
+Outcome: COMMITTED AND PUSHED — rereview pending
 
 ## Authorization and Scope
 
@@ -26,4 +26,7 @@ Outcome: COMMITTED — push/rereview pending
 - Release recovery commit: `1ebd785` — `Release INC Stats Tracker 1.0.9`.
 - The commit contains the explicit 55-file reviewed manifest and does not include `.local`, release
   ZIPs, credentials, or historical CSV changes.
-- Pending normal push and Claude rereview.
+- Results commit: `080b8ea` — `Document 1.0.9 Git handoff`.
+- Normal push advanced `origin/main` from `d5d006b` through `080b8ea`; no force, amend, rebase,
+  history rewrite, or tag occurred.
+- Pending Claude rereview.
