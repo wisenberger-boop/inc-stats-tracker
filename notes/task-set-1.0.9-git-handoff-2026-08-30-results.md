@@ -2,7 +2,7 @@
 
 Date: 2026-08-30
 Task: `notes/task-set-1.0.9-git-handoff-2026-08-30.md`
-Outcome: COMMITTED AND PUSHED — rereview pending
+Outcome: COMPLETE — rereview pending
 
 ## Authorization and Scope
 
@@ -37,4 +37,8 @@ Outcome: COMMITTED AND PUSHED — rereview pending
   referenced commits, with a deterministic runner contract wired into project verification.
 - Full verification passes with a new five-assertion reviewer-runner contract.
 - Reviewer dry run includes current HEAD exactly once using normalized full commit hashes.
-- Pending fix commit/push and rereview.
+- Reviewer evidence fix commit: `9bc04ed` — `Include HEAD in Claude review evidence`; pushed normally
+  to `origin/main` with the new runner contract and no tag or history rewrite.
+- The current results-only tip commit records final handoff state; the hardened runner includes that
+  current HEAD automatically even though a commit cannot contain its own hash.
+- Pending final Claude rereview.
