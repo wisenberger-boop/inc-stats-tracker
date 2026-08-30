@@ -44,7 +44,10 @@ $commits = @($commitCandidates | Where-Object {
 })
 $skippedCommits = @($commitCandidates | Where-Object { $_ -notin $commits })
 if ($skippedCommits.Count -gt 0) { $sections.Add("## EXTERNAL OR UNAVAILABLE COMMIT REFERENCES`n$($skippedCommits -join "`n")") }
-if ($commits.Count -eq 0) { $commits = @('HEAD') }
+$commits = @($commits | ForEach-Object { (git -C $root rev-parse --verify "$_^{commit}").Trim() })
+$headCommit = (git -C $root rev-parse --verify HEAD).Trim()
+if ($LASTEXITCODE -ne 0 -or -not $headCommit) { throw 'Cannot resolve current HEAD for review evidence.' }
+$commits = @($commits + $headCommit | Select-Object -Unique)
 foreach ($commit in $commits) {
   $diff = git -C $root show --format=fuller --no-ext-diff --no-renames --find-renames=0 $commit
   if ($LASTEXITCODE -ne 0) { throw "Cannot assemble Git evidence for $commit." }

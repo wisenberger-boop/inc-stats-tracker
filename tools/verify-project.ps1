@@ -64,6 +64,11 @@ if ($LASTEXITCODE -ne 0) {
     Add-Failure 'Deployment script contract check failed.'
 }
 
+& powershell -NoProfile -File (Join-Path $root 'tests\claude-review-runner-contract.ps1')
+if ($LASTEXITCODE -ne 0) {
+    Add-Failure 'Claude review runner contract check failed.'
+}
+
 if ($ZipPath) {
     $resolvedZip = (Resolve-Path -LiteralPath $ZipPath).Path
     Add-Type -Assembly 'System.IO.Compression.FileSystem'
